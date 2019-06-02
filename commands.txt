@@ -1,0 +1,2 @@
+Κατασκευή του lex.cpp για λεκτική ανάλυση από το lex.l:
+flex -olex.cpp lex.l
