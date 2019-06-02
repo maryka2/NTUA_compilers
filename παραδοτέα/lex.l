@@ -59,6 +59,8 @@
 #define T_charconst 57
 #define T_stringconst 58
 
+void ERROR (const char msg []);
+
 int lineno =1;
 %}
 
@@ -68,7 +70,7 @@ D [0-9]
 W [ \t\n\r]
 
 %x COMMENT
-
+%option noyywrap
 %%
 
 <<EOF>> { return T_eof; }
