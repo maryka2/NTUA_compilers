@@ -1,0 +1,138 @@
+%{
+#include <cstdio>
+#include "lexer.hpp"  pif
+%}
+
+%token T_eof <<EOF>>
+
+%token T_and "and"
+
+%token T_array "array"
+
+%token T_begin "begin"
+
+%token T_boolean "boolean"
+
+%token T_char "char"
+
+%token T_dispose "dispose"
+
+%token T_div "div"
+
+%token T_do "do"
+
+%token T_else "else"
+
+%token T_end "end"
+
+%token T_false "false"
+
+%token T_forward "forward"
+
+%token T_function "function"
+
+%token T_goto "goto"
+
+%token T_if "if"
+
+%token T_integer "integer"
+
+%token T_label "label"
+
+%token T_mod "mod"
+
+%token T_new "new"
+
+%token T_nil "nil"
+
+%token T_not "not"
+
+%token T_of "of"
+
+%token T_or "or"
+
+%token T_procedure "procedure"
+
+%token T_program "program"
+
+%token T_real "real"
+
+%token T_result "result"
+
+%token T_return "return"
+
+%token T_then "then"
+
+%token T_true "true"
+
+%token T_var "var"
+
+%token T_while "while"
+
+%token T_eq "="
+
+%token T_gt ">"
+
+%token T_lt "<"
+
+%token T_ne "<>"
+
+%token T_ge ">="
+
+%token T_le "<="
+
+%token T_plus "+"
+
+%token T_minus "-"
+
+%token T_times "*"
+
+%token T_rdiv "/"
+
+%token T_dref "^"
+
+%token T_ref "@"
+
+%token T_assign ":="
+
+%token T_semicolon ";"
+
+%token T_dot "."
+
+%token T_lparen "("
+
+%token T_rparen ")"
+
+%token T_colon ":"
+
+%token T_comma ","
+
+%token T_lbracket "["
+
+%token T_rbracket "]"
+
+%union{
+	int i;
+	bool b; pif
+	char str[80]; pif
+	double f;
+array1,2 pointers pif
+}
+
+%token<str> T_id
+%token<i> T_intconst
+%token<f> T_realconst
+%token<str> T_charconst
+
+%type pif
+%token<str> T_stringconst
+
+%nonassoc '=' '>' '<' '<=' '>=' '<>'
+%left '+' '-' T_or 
+%left '*' '/' T_div T_mod T_and 
+
+%expect pif
+
+%%
+
+program
