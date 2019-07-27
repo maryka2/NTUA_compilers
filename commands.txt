@@ -1,6 +1,6 @@
 Κατασκευή του lex.cpp για λεκτική ανάλυση από το lex.l:
-flex -olex.cpp lex.l
+flex -olexer.cpp lexer.l
 
 
 Για compile του lex.cpp:
-g++ -O2 lex.cpp -o lex
+g++ -O2 lexer.cpp -o lexer
