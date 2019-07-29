@@ -130,8 +130,8 @@ local 				: "var" var_name_type_list
 
 
 
-var_name_type_list		: var_name_list ":" type ";" var_name_type_list	{ $$ = $1 +":"+ $3 +";"+ $5; }
-				| var_name_list ":" type ";"			{ $$ = $1 +":"+ $3 +";"; }
+var_name_type_list		: var_name_list ":" type ";" var_name_type_list	
+				| var_name_list ":" type ";"
 				;
 
 
