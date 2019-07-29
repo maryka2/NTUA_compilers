@@ -1,4 +1,6 @@
 %{ #include <string.h>
+#include "lexer.hpp"
+
 #define T_eof 0
 #define T_id 1
 #define T_and 2
