@@ -1,6 +1,7 @@
 %{
 #include <cstdio>
 #include <stdlib.h>
+#include "lexer.hpp"
 %}
 
 %token T_and "and"
