@@ -207,8 +207,8 @@ rvalue				: T_intconst		{ $$ = new Intconst($1); }
 				| '(' rvalue ')'	{ $$ = $2; }
 				| "nil"			{ $$ = new Nil(); }
 				| call			{ $$ = $1; }
-				| '@' lvalue		{ $$ = new UnOp($1, $2); }
-				| "not" expr		{ $$ = new UnOp($1, $2); }
+				| '@' lvalue		{ $$ = new UnOp("@", $2); }
+				| "not" expr		{ $$ = new UnOp("not", $2); }
 				| expr '+' expr		{ $$ = new BinOp($1, $2, $3); }
 				| expr '-' expr		{ $$ = new BinOp($1, $2, $3); }
 				| expr '*' expr		{ $$ = new BinOp($1, $2, $3); }
@@ -223,8 +223,8 @@ rvalue				: T_intconst		{ $$ = new Intconst($1); }
 				| expr "<=" expr	{ $$ = new BinOp($1, $2, $3); }
 				| expr '>' expr		{ $$ = new BinOp($1, $2, $3); }
 				| expr ">=" expr	{ $$ = new BinOp($1, $2, $3); }
-				| '+' expr		{ $$ = new UnOp($1, $2); }
-				| '-' expr		{ $$ = new UnOp($1, $2); }
+				| '+' expr		{ $$ = new UnOp("+", $2); }
+				| '-' expr		{ $$ = new UnOp("-", $2); }
 				;
 
 expr				: lvalue		{ $$ = $1; }
