@@ -2,6 +2,10 @@
 #include <cstdio>
 #include <stdlib.h>
 #include "lexer.hpp"
+
+SymbolTable st;
+std::vector<int> rt_stack;
+
 %}
 
 %token T_and "and"
@@ -64,18 +68,25 @@
 %left T_plus T_minus T_or
 %left T_time T_rdiv T_div T_mod T_and
 
-/* %expect 1; */
+%expect 1;
 
 %union{
 	int i;
 	double f;
 	char str[80];
 	bool b;
+	Type type;
 	Expr *expr;
 	Lvalue *lvalue;
 	Rvalue *rvalue;
 	Call *call;
-	Type type;
+	Header *header;
+	Formal *formal;
+	Block *block;
+	Stmt *stmt
+	Var_ntl *var_name_type_list;
+	Formal_l *formal_list;
+	Expr_l *expr_list;
 }
 
 %token<str> T_id
@@ -89,8 +100,14 @@
 %type<rvalue>  rvalue
 %type<call>  call		//pif
 %type<str> var_name_list
-%type<str> var_name_type_list
-%type<type> type
+%type<header> header
+%type<formal> formal
+%type<block> block body local_list program stmt_list  local
+%type<stmt> stmt
+%type<var_name_type_list> var_name_type_list
+%type<formal_list> formal_list
+%type<expr_list> expr_list
+
 
 %%
 
@@ -113,8 +130,8 @@ local 				: "var" var_name_type_list
 
 
 
-var_name_type_list		: var_name_list ":" type ";" var_name_type_list	{ $$ = $1 +":"+ $3 +";"+ $5; }
-				| var_name_list ":" type ";"			{ $$ = $1 +":"+ $3 +";"; }
+var_name_type_list		: var_name_list ":" type ";" var_name_type_list
+				| var_name_list ":" type ";"
 				;
 
 
@@ -137,13 +154,13 @@ formal				: "var" var_name_list ":" type
 				| var_name_list ":" type
 				;
 
-type				: "integer"				{ $$ = "integer"; }
-				| "real"				{ $$ = "real"; }
-				| "boolean"				{ $$ = "boolean"; }
-				| "char"				{ $$ = "char"; }
-				| "array" "[" T_intconst "]" "of" type	{ $$ = "array [" + $3 +"] of " + $6; }
-				| "array" "of" type			{ $$ = "array of " +$3; }
-				| "^" type				{ $$ = "^" + $2; }
+type				: "integer"				{ $$ = T_integer; }
+				| "real"				{ $$ = T_real; }
+				| "boolean"				{ $$ = T_boolean; }
+				| "char"				{ $$ = T_char; }
+				| "array" "[" T_intconst "]" "of" type	{ $$ = T_arrayI; }
+				| "array" "of" type			{ $$ = T_arrayII; }
+				| "^" type				{ $$ = T_pointer; }
 				;
 
 block				: "begin" stmt_list "end"
@@ -153,7 +170,7 @@ block				: "begin" stmt_list "end"
 
 stmt_list			: stmt ";" stmt_list
 				| stmt_list ";"
-				| ";" stmt_list		
+				| ";" stmt_list
 				| stmt
 				;
 
@@ -162,7 +179,7 @@ stmt				: lvalue ":=" expr
 				| block
 				| call
 				| "if" expr "then" stmt "else" stmt
-				| "if" expr "then" stmt 
+				| "if" expr "then" stmt
 				| "while" expr "do" stmt
 				| T_id ":" stmt
 				| "goto" T_id
