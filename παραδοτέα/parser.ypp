@@ -108,11 +108,12 @@ std::vector<int> rt_stack;
 %type<var_name_type_list> var_name_type_list
 %type<formal_list> formal_list
 %type<expr_list> expr_list
+%type<type> type
 
 
 %%
 
-program				: "program" T_id ";" body "."
+program				: "program" T_id ';' body '.'
 				;
 
 body				: local_list block	{ $1->merge($2); $$ = $1; }
@@ -123,44 +124,44 @@ local_list			: /*nothing*/		{ $$ = new Block(); }
 				;
 
 local 				: "var" var_name_type_list	{ $$ = new Var($2); }
-				| "label" var_name_list ";"	{ $$ = new Label($2); }
-				| header ";" body ";"		{ $$ = new Header_Body($1, $3); }
-				| "forward" header ";"		{ $$ = new Forward($2); }
+				| "label" var_name_list ';'	{ $$ = new Label($2); }
+				| header ';' body ';'		{ $$ = new Header_Body($1, $3); }
+				| "forward" header ';'		{ $$ = new Forward($2); }
 				;
 
 
 
-var_name_type_list		: var_name_list ":" type ";"		{ $$ = new Name_Type($1, $3); }
-				| var_name_type_list var_name_list ":" type ";" { $1->append_name_type($2, $4); $$ = $1; }
+var_name_type_list		: var_name_list ':' type ';'		{ $$ = new Name_Type($1, $3); }
+				| var_name_type_list var_name_list ':' type ';' { $1->append_name_type($2, $4); $$ = $1; }
 				;
 
 
-var_name_list			: var_name_list "," T_id 			{ $1->append_name($3); $$ = $1; }
+var_name_list			: var_name_list ',' T_id 			{ $1->append_name($3); $$ = $1; }
 				| T_id						{ $$ = $1; }
 				;
 
-header				: "procedure" T_id "(" formal_list ")"			{ $$ = new Procedure($2, $4); }
-				| "function" T_id "("  formal_list ")" ":" type		{ $$ = new Function($2, $4, $7); }
-				| "procedure" T_id "(" ")"				{ $$ = new Procedure($2); }
-				| "function" T_id "(" ")" ":" type			{ $$ = new Function($2, $6); }
+header				: "procedure" T_id '(' formal_list ')'			{ $$ = new Procedure($2, $4); }
+				| "function" T_id '('  formal_list ')' ':' type		{ $$ = new Function($2, $4, $7); }
+				| "procedure" T_id '(' ')'				{ $$ = new Procedure($2); }
+				| "function" T_id '(' ')' ':' type			{ $$ = new Function($2, $6); }
 				;
 
 
 formal_list			: formal			{ $$ = $1; }
-				| formal_list ";" formal   	{ $1->append_formal($3); $$ = $1; }
+				| formal_list ';' formal   	{ $1->append_formal($3); $$ = $1; }
 				;
 
-formal				: "var" var_name_list ":" type		{ $$ = new By_Ref($2, $4); }
-				| var_name_list ":" type		{ $$ = new By_Val($1, $3); }
+formal				: "var" var_name_list ':' type		{ $$ = new By_Ref($2, $4); }
+				| var_name_list ':' type		{ $$ = new By_Val($1, $3); }
 				;
 
 type				: "integer"				{ $$ = TYPE_integer; }
 				| "real"				{ $$ = TYPE_real; }
 				| "boolean"				{ $$ = TYPE_boolean; }
 				| "char"				{ $$ = TYPE_char; }
-				| "array" "[" T_intconst "]" "of" type	{ $$ = TYPE_arrayI; }
+				| "array" '[' T_intconst ']' "of" type	{ $$ = TYPE_arrayI; }
 				| "array" "of" type			{ $$ = TYPE_arrayII; }
-				| "^" type				{ $$ = TYPE_pointer; }
+				| '^' type				{ $$ = TYPE_pointer; }
 				;
 
 block				: "begin" stmt_list "end"		{ $$ = $2; }
@@ -168,7 +169,7 @@ block				: "begin" stmt_list "end"		{ $$ = $2; }
 
 
 stmt_list			: /*nothing*/				{ $$ = new Block(); }
-				| stmt_list stmt ";"			{ $1->append_name_type($2); $$ = $1; }
+				| stmt_list stmt ';'			{ $1->append_name_type($2); $$ = $1; }
 				;
 
 
@@ -179,13 +180,13 @@ stmt				: /*nothing*/				{ $$ = new Block(); }
 				| "if" expr "then" stmt "else" stmt	{ $$ = new If($2, $4, $6); }
 				| "if" expr "then" stmt			{ $$ = new If($2, $4); }
 				| "while" expr "do" stmt		{ $$ = new While($2, $4); }
-				| T_id ":" stmt				{ $$ = new Label1($1, $3); }
+				| T_id ':' stmt				{ $$ = new Label1($1, $3); }
 				| "goto" T_id				{ $$ = new Goto($2); }
 				| "return"				{ $$ = new Return(); }
 				| "new" lvalue				{ $$ = new New($2); }
-				| "new" "[" expr "]" lvalue		{ $$ = new New1($3, $5); }
+				| "new" '[' expr ']' lvalue		{ $$ = new New1($3, $5); }
 				| "dispose" lvalue			{ $$ = new Dispose($2); }
-				| "dispose" "[" "]" lvalue		{ $$ = new Dispose1($4); }
+				| "dispose" '[' ']' lvalue		{ $$ = new Dispose1($4); }
 				;
 
 
@@ -193,9 +194,9 @@ stmt				: /*nothing*/				{ $$ = new Block(); }
 lvalue				: T_id			{ $$ = new Id($1); }
 				| "result"		{ $$ = new Result(); }
 				| T_stringconst		{ $$ = new Stringconst($1); }
-				| lvalue "[" expr "]"	{ $$ = new Array($1, $3); }
-				| expr "^"		{ $$ = new Pointer($1); }
-				| "(" lvalue ")"	{ $$ = $2; }
+				| lvalue '[' expr ']'	{ $$ = new Array($1, $3); }
+				| expr '^'		{ $$ = new Pointer($1); }
+				| '(' lvalue ')'	{ $$ = $2; }
 				;
 
 rvalue				: T_intconst		{ $$ = new Intconst($1); }
@@ -203,27 +204,27 @@ rvalue				: T_intconst		{ $$ = new Intconst($1); }
 				| "false"		{ $$ = new Bool($1); }
 				| T_realconst		{ $$ = new Realconst($1); }
 				| T_charconst		{ $$ = new Charconst($1); }
-				| "(" rvalue ")"	{ $$ = $2; }
+				| '(' rvalue ')'	{ $$ = $2; }
 				| "nil"			{ $$ = new Nil(); }
 				| call			{ $$ = $1; }
-				| "@" lvalue		{ $$ = new UnOp($1, $2); }
+				| '@' lvalue		{ $$ = new UnOp($1, $2); }
 				| "not" expr		{ $$ = new UnOp($1, $2); }
-				| expr "+" expr		{ $$ = new BinOp($1, $2, $3); }
-				| expr "-" expr		{ $$ = new BinOp($1, $2, $3); }
-				| expr "*" expr		{ $$ = new BinOp($1, $2, $3); }
-				| expr "/" expr		{ $$ = new BinOp($1, $2, $3); }
+				| expr '+' expr		{ $$ = new BinOp($1, $2, $3); }
+				| expr '-' expr		{ $$ = new BinOp($1, $2, $3); }
+				| expr '*' expr		{ $$ = new BinOp($1, $2, $3); }
+				| expr '/' expr		{ $$ = new BinOp($1, $2, $3); }
 				| expr "div" expr	{ $$ = new BinOp($1, $2, $3); }
 				| expr "mod" expr	{ $$ = new BinOp($1, $2, $3); }
 				| expr "or" expr	{ $$ = new BinOp($1, $2, $3); }
 				| expr "and" expr	{ $$ = new BinOp($1, $2, $3); }
-				| expr "=" expr		{ $$ = new BinOp($1, $2, $3); }
+				| expr '=' expr		{ $$ = new BinOp($1, $2, $3); }
 				| expr "<>" expr	{ $$ = new BinOp($1, $2, $3); }
-				| expr "<" expr		{ $$ = new BinOp($1, $2, $3); }
+				| expr '<' expr		{ $$ = new BinOp($1, $2, $3); }
 				| expr "<=" expr	{ $$ = new BinOp($1, $2, $3); }
-				| expr ">" expr		{ $$ = new BinOp($1, $2, $3); }
+				| expr '>' expr		{ $$ = new BinOp($1, $2, $3); }
 				| expr ">=" expr	{ $$ = new BinOp($1, $2, $3); }
-				| "+" expr		{ $$ = new UnOp($1, $2); }
-				| "-" expr		{ $$ = new UnOp($1, $2); }
+				| '+' expr		{ $$ = new UnOp($1, $2); }
+				| '-' expr		{ $$ = new UnOp($1, $2); }
 				;
 
 expr				: lvalue		{ $$ = $1; }
@@ -231,12 +232,12 @@ expr				: lvalue		{ $$ = $1; }
 				;
 
 
-call				: T_id "(" ")"			{ $$ = new Call($1); }
-				| T_id "(" expr_list ")"	{ $$ = new Call($1, $3); }
+call				: T_id '(' ')'			{ $$ = new Call($1); }
+				| T_id '(' expr_list ')'	{ $$ = new Call($1, $3); }
 				;
 
 expr_list			: expr			{ $$ = $1; }
-				|  expr_list "," expr	{ $1->append_name_type($3); $$ = $1; }
+				|  expr_list ',' expr	{ $1->append_name_type($3); $$ = $1; }
 				;
 
 %%
