@@ -113,7 +113,7 @@ std::vector<int> rt_stack;
 
 %%
 
-program				: "program" T_id ';' body '.'
+program				: "program" T_id ';' body '.'	{ $$ = new Program($4); }
 				;
 
 body				: local_list block	{ $1->merge($2); $$ = $1; }
