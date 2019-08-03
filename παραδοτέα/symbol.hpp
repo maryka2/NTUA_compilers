@@ -3,7 +3,7 @@
 #include <cstdlib>
 #include <vector>
 
-enum Type { TY_integer, TY_real, TY_boolean, TY_char, TY_arrayI, TY_arrayII, TY_pointer };
+enum Type { TYPE_integer, TYPE_real, TYPE_boolean, TYPE_char, TYPE_arrayI, TYPE_arrayII, TYPE_pointer };
 
 struct SymbolEntry {
   Type type;
