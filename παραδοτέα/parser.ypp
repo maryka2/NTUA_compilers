@@ -154,13 +154,13 @@ formal				: "var" var_name_list ":" type
 				| var_name_list ":" type
 				;
 
-type				: "integer"				{ $$ = T_integer; }
-				| "real"				{ $$ = T_real; }
-				| "boolean"				{ $$ = T_boolean; }
-				| "char"				{ $$ = T_char; }
-				| "array" "[" T_intconst "]" "of" type	{ $$ = T_arrayI; }
-				| "array" "of" type			{ $$ = T_arrayII; }
-				| "^" type				{ $$ = T_pointer; }
+type				: "integer"				{ $$ = TY_integer; }
+				| "real"				{ $$ = TY_real; }
+				| "boolean"				{ $$ = TY_boolean; }
+				| "char"				{ $$ = TY_char; }
+				| "array" "[" T_intconst "]" "of" type	{ $$ = TY_arrayI; }
+				| "array" "of" type			{ $$ = TY_arrayII; }
+				| "^" type				{ $$ = TY_pointer; }
 				;
 
 block				: "begin" stmt_list "end"
