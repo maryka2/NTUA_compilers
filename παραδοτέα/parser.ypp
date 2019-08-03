@@ -45,11 +45,11 @@ std::vector<int> rt_stack;
 %token T_ge ">="
 %token T_le "<="
 %token T_assign ":="
-%token T_semicolon ";"
-%token T_dot "."
-%token T_rparen ")"
-%token T_colon ":"
-%token T_comma ","
+%token T_semicolon ';'
+%token T_dot '.'
+%token T_rparen ')'
+%token T_colon ':'
+%token T_comma ','
 
 
 %nonassoc '=' '>' '<' ">=" "<=" "<>"
