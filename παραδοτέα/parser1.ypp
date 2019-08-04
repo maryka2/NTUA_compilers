@@ -203,7 +203,7 @@ rvalue				: T_intconst		{ $$ = new Intconst($1); }
 				| '(' rvalue ')'	{ $$ = $2; }
 				| "nil"			{ $$ = new Nil(); }
 				| call			{ $$ = $1; }
-				| '@' lvalue		{ $$ = new Op("@", $2); }
+				| '@' lvalue		{ $$ = new Op($1, $2); }
 			        | unop expr   		{ $$ = new UnOp($1, $2); }
 			        | expr binop expr  		{ $$ = new BinOp($1, $2, $3); }
 			        ;
