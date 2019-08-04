@@ -81,7 +81,7 @@ std::vector<int> rt_stack;
 	Expr_l *expr_list;
 	Unop *unop;
 	Binop *binop;
-	char op;
+	char op[3];
 }
 
 %token<str> T_id
@@ -205,7 +205,7 @@ rvalue				: T_intconst		{ $$ = new Intconst($1); }
 				| call			{ $$ = $1; }
 				| '@' lvalue		{ $$ = new Op("@", $2); }
 			        | unop expr   		{ $$ = new UnOp($1, $2); }
-			        | binop expr  		{ $$ = new BinOp($1, $2); }
+			        | expr binop expr  		{ $$ = new BinOp($1, $2, $3); }
 			        ;
         
 unop    : "not"  	{ $$ = new Not(); }
