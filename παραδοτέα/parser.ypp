@@ -79,7 +79,7 @@ std::vector<int> rt_stack;
 	Var_ntl *var_name_type_list;
 	Formal_l *formal_list;
 	Expr_l *expr_list;
-	char op[3];
+	char *op;
 }
 
 %token<str> T_id
