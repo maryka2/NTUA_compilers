@@ -92,7 +92,7 @@ std::vector<int> rt_stack;
 %type<expr>  expr
 %type<lvalue>  lvalue
 %type<rvalue>  rvalue
-%type<call>  call		//pif
+%type<call>  call
 %type<str> var_name_list
 %type<header> header
 %type<formal> formal
