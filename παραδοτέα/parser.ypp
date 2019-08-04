@@ -52,13 +52,13 @@ std::vector<int> rt_stack;
 %token T_comma ','
 
 
-%nonassoc '=' '>' '<' ">=" "<=" "<>"
-%left '+' '-' "or" 
-%left '*' '/' "div" "mod" "and" 
-%precedence "not"
-%precedence '^'
-%precedence '@'
-%precedence '[' ']'
+%nonassoc<op> '=' '>' '<' ">=" "<=" "<>"
+%left<op> '+' '-' "or" 
+%left<op> '*' '/' "div" "mod" "and" 
+%precedence<op> "not"
+%precedence<op> '^'
+%precedence<op> '@'
+%precedence<op> '[' ']'
 
 %expect 1;
 
@@ -79,6 +79,7 @@ std::vector<int> rt_stack;
 	Var_ntl *var_name_type_list;
 	Formal_l *formal_list;
 	Expr_l *expr_list;
+	char op;
 }
 
 %token<str> T_id
