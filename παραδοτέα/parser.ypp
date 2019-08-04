@@ -65,7 +65,7 @@ std::vector<int> rt_stack;
 %union{
 	int i;
 	double f;
-	char str[80];
+	char *str;
 	bool b;
 	Type type;
 	Expr *expr;
