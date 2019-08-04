@@ -79,6 +79,8 @@ std::vector<int> rt_stack;
 	Var_ntl *var_name_type_list;
 	Formal_l *formal_list;
 	Expr_l *expr_list;
+	Unop *unop;
+	Binop *binop;
 }
 
 %token<str> T_id
@@ -100,6 +102,8 @@ std::vector<int> rt_stack;
 %type<formal_list> formal_list
 %type<expr_list> expr_list
 %type<type> type
+%type<unop> unop
+%type<binop> binop
 
 
 %%
@@ -199,30 +203,30 @@ rvalue				: T_intconst		{ $$ = new Intconst($1); }
 				| "nil"			{ $$ = new Nil(); }
 				| call			{ $$ = $1; }
 				| '@' lvalue		{ $$ = new Op("@", $2); }
-        | unop expr   { $$ = new UnOp($1, $2); }
-        | binop expr  { $$ = new BinnOp($1, $2); }
+			        | unop expr   		{ $$ = new UnOp($1, $2); }
+			        | binop expr  		{ $$ = new BinOp($1, $2); }
+			        ;
+        
+unop    : "not"  	{ $$ = new Not(); }
+        | '+'		{ $$ = $1; }
+        | '-'		{ $$ = $1; }
         ;
         
-unop    : "not"   { $$ = T_not; }
-        | '+'
-        | '-'
-        ;
-        
-binop   : '+'
-        | '-'
-        | '*'
-        | '/'
-        | "div"
-        | "mod"
-        | "or"
-        | "and"
-        | '='
-        | "<>"
-        | '<'
-        | "<="
-        | '>'
-        | ">="
-				;
+binop   : '+'		{ $$ = $1; }
+        | '-'		{ $$ = $1; }
+        | '*'		{ $$ = $1; }
+        | '/'		{ $$ = $1; }
+        | "div"		{ $$ = new Div(); }
+        | "mod"		{ $$ = new Mod(); }
+        | "or"		{ $$ = new Or(); }
+        | "and"		{ $$ = new And(); }
+        | '='		{ $$ = $1; }
+        | "<>"		{ $$ = new Ne(); }
+        | '<'		{ $$ = $1; }
+        | "<="		{ $$ = new Le(); }
+        | '>'		{ $$ = $1; }
+        | ">="		{ $$ = new Ge(); }
+	;
 
 expr				: lvalue		{ $$ = $1; }
 				| rvalue		{ $$ = $1; }
