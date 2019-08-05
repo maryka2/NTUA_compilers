@@ -157,7 +157,7 @@ public:
     case "+": return left->eval() + right->eval();
     case "-": return left->eval() - right->eval();
     case "*": return left->eval() * right->eval();
-    case "/": return left->eval() / right->eval();
+    case "/": return 1.0*left->eval() / right->eval();
     case "div": return left->eval() / right->eval();
     case "mod": return left->eval() % right->eval();
     case "=": return left->eval() == right->eval();
