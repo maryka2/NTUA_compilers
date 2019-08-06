@@ -69,7 +69,25 @@ class Stringconst: public Lvalue {};
 
 class Result: public Lvalue {};
 
-class Id: public Lvalue {};
+//pif
+class Id: public Lvalue {
+public:
+  Id(char *v): var(v), offset(-1) {}
+  virtual void printOn(std::ostream &out) const override {
+    out << "Id(" << var << "@" << offset << ")";
+  }
+  virtual int eval() const override {
+    return rt_stack[offset];
+  }
+  virtual void sem() override {
+    SymbolEntry *e = st.lookup(var);
+    type = e->type;
+    offset = e->offset;
+  }
+private:
+  char *var;
+  int offset;
+};
 
 class Binop: public Rvalue {
 public:
@@ -87,7 +105,6 @@ public:
 // < > <= >= real/integer->boolean
 //switch δουλευει???
 //ERROR αντι για exit(1)
-//τελευταιοι τελεστες, συγκρισης -> real με int?
 
     if (( left->type_check(TYPE_arrayI) ) || ( left->type_check(TYPE_arrayII) ) || ( right->type_check(TYPE_arrayI) ) || ( right->type_check(TYPE_arrayII) )){
 	exit(1);
@@ -157,7 +174,7 @@ public:
     case "+": return left->eval() + right->eval();
     case "-": return left->eval() - right->eval();
     case "*": return left->eval() * right->eval();
-    case "/": return 1.0*left->eval() / right->eval();
+    case "/": return left->eval() / right->eval();
     case "div": return left->eval() / right->eval();
     case "mod": return left->eval() % right->eval();
     case "=": return left->eval() == right->eval();
@@ -223,15 +240,72 @@ private:
   Expr *right;
 };
 
-class Nil: public Rvalue {};
 
-class Charconst: public Rvalue {};
+//pif
+class Nil: public Rvalue {
+  Nil() {}
+  virtual void printOn(std::ostream &out) const override {
+    out << "Nil";
+  }
+  virtual void* eval() const override { return nullptr; }
+  virtual void sem() override { type = TYPE_pointer; }
+};
 
-class Realconst: public Rvalue {};
 
-class Bool: public Rvalue {};
+//pif
+class Charconst: public Rvalue {
+public:
+  Charconst(char c): char_const(c) {}
+  virtual void printOn(std::ostream &out) const override {
+    out << "Charconst(" << char_const << ")";
+  }
+  virtual char eval() const override { return char_const; }
+  virtual void sem() override { type = TYPE_char; }
+private:
+  char char_const;
+};
 
-class Intconst: public Rvalue {};
+
+//pif
+class Realconst: public Rvalue {
+public:
+  Realconst(real r): num(r) {}
+  virtual void printOn(std::ostream &out) const override {
+    out << "Realconst(" << num << ")";
+  }
+  virtual real eval() const override { return num; }
+  virtual void sem() override { type = TYPE_real; }
+private:
+  real num;
+};
+
+
+//pif
+class Bool: public Rvalue {
+public:
+  Bool(string s): boolean(s) {}
+  virtual void printOn(std::ostream &out) const override {
+    out << "Bool(" << boolean << ")";
+  }
+  virtual bool eval() const override { return (boolean=="true") }
+  virtual void sem() override { type = TYPE_boolean; }
+private:
+  string boolean;
+};
+
+
+//pif
+class Intconst: public Rvalue {
+public:
+  Intconst(int n): num(n) {}
+  virtual void printOn(std::ostream &out) const override {
+    out << "Intconst(" << num << ")";
+  }
+  virtual int eval() const override { return num; }
+  virtual void sem() override { type = TYPE_integer; }
+private:
+  int num;
+};
 
 class Dispose1: public Stmt {};
 
@@ -247,13 +321,69 @@ class Goto: public Stmt {};
 
 class Label1: public Stmt {};
 
-class While: public Stmt {};
 
-class If: public Stmt {};
+//pif
+class While: public Stmt {
+public:
+  While(Expr *e, Stmt *s): expr(e), stmt(s) {}
+  ~While() { delete expr; delete stmt; }
+  virtual void printOn(std::ostream &out) const override {
+    out << "While(" << *expr << ", " << *stmt << ")";
+  }
+  virtual void sem() override {
+    if (expr->type_check(TYPE_boolean)){
+      stmt->sem();
+    }
+    else{
+ 	exit(1);
+    }
+  }
+  virtual void run() const override {
+    while (expr->eval()){
+      stmt->run();
+    }
+  }
+private:
+  Expr *expr;
+  Stmt *stmt;
+};
+
+
+//pif
+class If: public Stmt {
+public:
+  If(Expr *c, Stmt *s1, Stmt *s2 = nullptr):
+    cond(c), stmt1(s1), stmt2(s2) {}
+  ~If() { delete cond; delete stmt1; delete stmt2; }
+  virtual void printOn(std::ostream &out) const override {
+    out << "If(" << *cond << ", " << *stmt1;
+    if (stmt2 != nullptr) out << ", " << *stmt2;
+    out << ")";
+  }
+  virtual void sem() override {
+    if (cond->type_check(TYPE_bool)){
+      stmt1->sem();
+      if (stmt2 != nullptr) stmt2->sem();
+    }
+    else {
+      exit(1);
+    }
+  }
+  virtual void run() const override {
+    if (cond->eval())
+      stmt1->run();
+    else if (stmt2 != nullptr)
+      stmt2->run();
+  }
+private:
+  Expr *cond;
+  Stmt *stmt1;
+  Stmt *stmt2;
+};
 
 class Call: public Stmt {};
 
-class Block: public Stmt {local_list}; // ?? λόγω body
+class Block: public Stmt {local_list}; ?? λογω body
 
 class Assignment: public Stmt {};
 
