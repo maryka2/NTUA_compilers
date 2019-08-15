@@ -33,7 +33,7 @@ public:
     locals[c] = SymbolEntry(t, offset++);
     ++size;
   }*/
-  SybolEntry insert(string c, Type t, SymbolEntry *n) {
+  SymbolEntry *insert(string c, Type t, SymbolEntry *n) {
     if (locals.find(c) != locals.end()) {
       std::cerr << "Duplicate variable " << c << std::endl;
       exit(1);
@@ -64,18 +64,18 @@ public:
       std::cerr << "Unknown variable " << c << std::endl;
       exit(1);
      }
-      return &(globals[c]);
+      return globals[c];
   }
   //int getSizeOfCurrentScope() const { return scopes.back().getSize(); }
   void insert(string c, Type t) {
-    SymbolEntry *n, *p;
+    SymbolEntry *n;
     if (globals.find(c) == globals.end()) n=nullptr;
-    else n=&(globals[c]);
+    else n=globals[c];
     globals[c] = scopes.back().insert(c, t, n); 
   }
 private:
   std::vector<Scope> scopes;
-  std::unordered_map<string, SymbolEntry> globals;
+  std::unordered_map<string, SymbolEntry*> globals;
 };
 
 extern SymbolTable st;
