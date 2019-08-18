@@ -54,7 +54,12 @@ public:
    // scopes.push_back(Scope(ofs));
    scopes.push_back(Scope());
   }
-  void closeScope() { scopes.pop_back(); };
+  void closeScope() {
+    for (unorder_map<string, SymbolEntry>::iterator it = scope.back().locals.begin(); it != scope.back().locals.end(); it++) {
+      global[it->first] = &(it->second);
+    }
+    scopes.pop_back();
+  };
   SymbolEntry *lookup(string c) {
 /*    for (auto i = scopes.rbegin(); i != scopes.rend(); ++i) {
       SymbolEntry *e = i->lookup(c);
