@@ -5,82 +5,60 @@
 
 enum Type { TYPE_integer, TYPE_real, TYPE_boolean, TYPE_char, TYPE_arrayI, TYPE_arrayII, TYPE_pointer };
 
+// SymbolEntry is a small box in the data stack
 struct SymbolEntry {
-  Type type;
-  // int offset;
-  SymbolEntry *next;
+  Type type;  // Variable's type
+  SymbolEntry *next;  // A pointer to the next SymbolEntry with the same name, or NULL if such a variable doesn't exist
   SymbolEntry() {}
-  //SymbolEntry(Type t, int ofs) : type(t), offset(ofs) {}
-  SymbolEntry(Type t, SymbolEntry *n) : type(t), next(n) {}
+  SymbolEntry(Type t, SymbolEntry *n) : type(t), next(n) {}  // Initializer
 };
 
+// Scope is a big box in the data stack
 class Scope {
 public:
   //Scope() : locals(), offset(-1), size(0) {}
-  Scope() : locals() {}
-  //Scope(int ofs) : locals(), offset(ofs), size(0) {}
-  //int getOffset() const { return offset; }
-  //int getSize() const { return size; }
-/*  SymbolEntry *lookup(string c) {
-     if (locals.find(c) == locals.end()) return nullptr;
-      return &(locals[c]);
-    }*/ 
-/*  void insert(string c, Type t) {
-    if (locals.find(c) != locals.end()) {
-      std::cerr << "Duplicate variable " << c << std::endl;
-      exit(1);
-    }
-    locals[c] = SymbolEntry(t, offset++);
-    ++size;
-  }*/
+  Scope() : locals() {}  // Initializer: hash map locals is empty
   SymbolEntry *insert(string c, Type t, SymbolEntry *n) {
-    if (locals.find(c) != locals.end()) {
-      std::cerr << "Duplicate variable " << c << std::endl;
-      exit(1);
+    if (locals.find(c) != locals.end()) {  // Check if there is already a variable with name equal to c in this scope
+      // If we are here there is already a variable with the name with that name
+      std::cerr << "Duplicate variable " << c << std::endl;  // Print error message
+      exit(1);  // Exit compiler
     }
-    locals[c] = SymbolEntry(t, n);
-    return &(locals[c]);
+    locals[c] = SymbolEntry(t, n);  // Create new variable
+    return &(locals[c]);  // Return pointer to the new variable
   }
 private:
-  std::unordered_map<string, SymbolEntry> locals;
-  //int offset;
-  //int size;
+  std::unordered_map<string, SymbolEntry> locals;  // Hash-map matching variable names to SymbolEntries
 };
 
 class SymbolTable {
 public:
   void openScope() {
-   // int ofs = scopes.empty() ? 0 : scopes.back().getOffset();
-   // scopes.push_back(Scope(ofs));
-   scopes.push_back(Scope());
+   scopes.push_back(Scope());  // Push new scope on the top of data stack
   }
-  void closeScope() {
+  void closeScope() {  // Removes top scope
     for (unorder_map<string, SymbolEntry>::iterator it = scope.back().locals.begin(); it != scope.back().locals.end(); it++) {
-      global[it->first] = &(it->second);
+      // For every variable (SymbolEntry) of the top scope
+      global[it->first] = (it->second).next;  // Make the global hash table point the next occurance of this variable name
     }
-    scopes.pop_back();
+    scopes.pop_back();  // Remove top scope
   };
   SymbolEntry *lookup(string c) {
-/*    for (auto i = scopes.rbegin(); i != scopes.rend(); ++i) {
-      SymbolEntry *e = i->lookup(c);
-      if (e != nullptr) return e;
-    }*/
      if (globals.find(c) == globals.end()) {
       std::cerr << "Unknown variable " << c << std::endl;
-      exit(1);
+      exit(1);  // If variable name isn't used exit compiler
      }
-      return globals[c];
+      return globals[c];  // If variable exists return pointer to its SymbolEntry
   }
-  //int getSizeOfCurrentScope() const { return scopes.back().getSize(); }
   void insert(string c, Type t) {
-    SymbolEntry *n;
-    if (globals.find(c) == globals.end()) n=nullptr;
-    else n=globals[c];
-    globals[c] = scopes.back().insert(c, t, n); 
+    SymbolEntry *n;  // Pointer to next variable with the same name
+    if (globals.find(c) == globals.end()) n = nullptr;  // If it doesn't exist point to nullptr
+    else n = globals[c];  // else point to it
+    globals[c] = scopes.back().insert(c, t, n); // Insert SymbolEntry to top Scope
   }
 private:
-  std::vector<Scope> scopes;
-  std::unordered_map<string, SymbolEntry*> globals;
+  std::vector<Scope> scopes;  // The data stack
+  std::unordered_map<string, SymbolEntry*> globals;  // Global hash table
 };
 
-extern SymbolTable st;
+extern SymbolTable st;  // The symbol table
