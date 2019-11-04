@@ -1,7 +1,9 @@
 #pragma once
 
-#include <cstdlib>
+#include <iostream>
 #include <vector>
+#include <unordered_map>
+using namespace std;
 
 enum Type { TYPE_integer, TYPE_real, TYPE_boolean, TYPE_char, TYPE_arrayI, TYPE_arrayII, TYPE_pointer };
 
@@ -16,19 +18,18 @@ struct SymbolEntry {
 // Scope is a big box in the data stack
 class Scope {
 public:
-  //Scope() : locals(), offset(-1), size(0) {}
+  unordered_map<string, SymbolEntry> locals;  // Hash-map matching variable names to SymbolEntries
+  
   Scope() : locals() {}  // Initializer: hash map locals is empty
   SymbolEntry *insert(string c, Type t, SymbolEntry *n) {
     if (locals.find(c) != locals.end()) {  // Check if there is already a variable with name equal to c in this scope
       // If we are here there is already a variable with the name with that name
-      std::cerr << "Duplicate variable " << c << std::endl;  // Print error message
+      cerr << "Duplicate variable " << c << endl;  // Print error message
       exit(1);  // Exit compiler
     }
     locals[c] = SymbolEntry(t, n);  // Create new variable
     return &(locals[c]);  // Return pointer to the new variable
   }
-private:
-  std::unordered_map<string, SymbolEntry> locals;  // Hash-map matching variable names to SymbolEntries
 };
 
 class SymbolTable {
@@ -37,9 +38,9 @@ public:
    scopes.push_back(Scope());  // Push new scope on the top of data stack
   }
   void closeScope() {  // Removes top scope
-    for (unorder_map<string, SymbolEntry>::iterator it = scope.back().locals.begin(); it != scope.back().locals.end(); it++) {
+    for (unordered_map<string, SymbolEntry>::iterator it = scopes.back().locals.begin(); it != scopes.back().locals.end(); it++) {
       // For every variable (SymbolEntry) of the top scope
-      global[it->first] = (it->second).next;  // Make the global hash table point the next occurance of this variable name
+      globals[it->first] = (it->second).next;  // Make the global hash table point the next occurance of this variable name
     }
     scopes.pop_back();  // Remove top scope
   };
@@ -61,4 +62,4 @@ private:
   std::unordered_map<string, SymbolEntry*> globals;  // Global hash table
 };
 
-extern SymbolTable st;  // The symbol table
+extern SymbolTable st; // The symbol table
