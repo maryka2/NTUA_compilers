@@ -7,3 +7,4 @@ g++ -O2 lexer.cpp -o lexer
 
 Για τον ΣΑ:
 bison -d parser.y
+bison -d parser.y -v 
