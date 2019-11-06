@@ -8,5 +8,5 @@ g++ -Wall -O2 lexer.cpp -o lexer
 Για τον ΣΑ:
 - Χωρίς παραγωγή αρχείου με λεπτομέρειες για τα conflicts:
 bison -d parser.ypp
-- Με παραγωγή αρχείο με λεπτομέρειες για τα conflicts:
+- Με παραγωγή αρχείου με λεπτομέρειες για τα conflicts:
 bison -d parser.ypp -v 
