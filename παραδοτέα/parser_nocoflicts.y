@@ -162,7 +162,7 @@ block				: "begin" stmt_list "end"		{ $$ = $2; }
 
 
 stmt_list			: /*nothing*/				{ $$ = new Block(); }
-				| stmt_list stmt ';'			{ $1->append_name_type($2); $$ = $1; }
+				| stmt_list stmt ';'			{ $1->append_stmt($2); $$ = $1; }
 				;
 
 
@@ -233,7 +233,7 @@ call				: T_id '(' ')'			{ $$ = new Call($1); }
 				;
 
 expr_list			: expr			{ $$ = $1; }
-				|  expr_list ',' expr	{ $1->append_name_type($3); $$ = $1; }
+				|  expr_list ',' expr	{ $1->append_expr($3); $$ = $1; }
 				;
 
 %%
