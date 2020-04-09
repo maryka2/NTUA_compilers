@@ -1,0 +1,8 @@
+TYPE_integer
+TYPE_real
+TYPE_boolean
+TYPE_char
+TYPE_arrayI
+TYPE_arrayII
+TYPE_pointer
+TYPE_string

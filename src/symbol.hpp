@@ -3,7 +3,7 @@
 #include <unordered_map>
 using namespace std;
 
-enum Type { TYPE_integer, TYPE_real, TYPE_boolean, TYPE_char, TYPE_arrayI, TYPE_arrayII, TYPE_pointer };
+enum Type { TYPE_integer, TYPE_real, TYPE_boolean, TYPE_char, TYPE_arrayI, TYPE_arrayII, TYPE_pointer, TYPE_string };
 
 // SymbolEntry is a small box in the data stack
 struct SymbolEntry {
@@ -17,7 +17,7 @@ struct SymbolEntry {
 class Scope {
 public:
   unordered_map<string, SymbolEntry> locals;  // Hash-map matching variable names to SymbolEntries
-  
+
   Scope() : locals() {}  // Initializer: hash map locals is empty
   SymbolEntry *insert(string c, Type t, SymbolEntry *n) {
     if (locals.find(c) != locals.end()) {  // Check if there is already a variable with name equal to c in this scope

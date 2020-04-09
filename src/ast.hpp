@@ -4,6 +4,7 @@
 #include <map>
 #include <vector>
 #include "symbol.hpp"
+#include "type.hpp"
 
 inline std::ostream& operator<<(std::ostream &out, Type t) {
   switch (t) {
@@ -14,6 +15,7 @@ inline std::ostream& operator<<(std::ostream &out, Type t) {
   case TYPE_arrayI: out << "arrayI"; break;
   case TYPE_arrayII: out << "arrayII"; break;
   case TYPE_pointer: out << "pointer"; break;
+  case TYPE_string: out << "string"; break;
 }
   return out;
 }
