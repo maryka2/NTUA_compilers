@@ -15,7 +15,7 @@ lexer: lexer.o
 parser.hpp parser.cpp: parser_noconflicts.y
 				bison -dv -o parser.cpp parser_noconflicts.y
 
-parser.o: parser.cpp lexer.hpp ast.hpp symbol.hpp type.hpp
+parser.o: parser.cpp lexer.hpp ast.hpp symbol.hpp type.cpp
 
 pcl: lexer.o parser.o
       	$(CXX) $(CXXFLAGS) -o pcl lexer.o parser.o
