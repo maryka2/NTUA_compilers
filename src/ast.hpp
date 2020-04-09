@@ -7,7 +7,7 @@
 #include "type.hpp"
 
 inline std::ostream& operator<<(std::ostream &out, Type t) {
-  switch (t) {
+  switch (t->kind) {
   case TYPE_integer: out << "integer"; break;
   case TYPE_real: out << "real"; break;
   case TYPE_boolean: out << "boolean"; break;
@@ -34,8 +34,11 @@ inline std::ostream& operator<<(std::ostream &out, const AST &t) {
 
 
 class Expr: public AST {
-// public:
-
+public:
+  bool type_check(myType t) {
+    sem();
+    return (type->kind == t);
+  }
 protected:
   Type type;
 };
@@ -48,15 +51,6 @@ class Rvalue: public Expr {
 //sem(), type_check(type t)->bool, eval()
 public:
   virtual int eval() const = 0;
-  bool type_check(Type t) {
-    sem();
-    if (type != t) {
-      return false;
-    }
-    else {
-      return true;
-    }
-  }
 protected:
   Type type;
 };
@@ -103,7 +97,6 @@ public:
 //= <> ->bool, παιρνει 2αριθμ, αλλιως ίδιου τυπου (οχι πινακα) συγκρ οι δυαδ αναπ
 //or and  bool->bool με βραχυκυκλ
 // < > <= >= real/integer->boolean
-//switch δουλευει???
 //ERROR αντι για exit(1)
 
     if (( left->type_check(TYPE_arrayI) ) || ( left->type_check(TYPE_arrayII) ) || ( right->type_check(TYPE_arrayI) ) || ( right->type_check(TYPE_arrayII) )){

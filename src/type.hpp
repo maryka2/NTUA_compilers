@@ -1,10 +1,6 @@
 #pragma once
 
-typedef struct Type_tag * Type;
-
-
-struct Type_tag {
-    enum {
+enum myType{
       TYPE_integer,
       TYPE_real,
       TYPE_boolean,
@@ -13,7 +9,13 @@ struct Type_tag {
       TYPE_arrayII,
       TYPE_pointer,
       TYPE_string
-    } kind;
+    } ;
+
+typedef struct Type_tag * Type;
+
+
+struct Type_tag {
+    enum myType kind;
     union {
         struct {
             int dim;
