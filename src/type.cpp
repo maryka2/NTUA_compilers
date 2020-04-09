@@ -1,15 +1,6 @@
 #include "type.hpp"
 
 
-Type type_integer ();
-Type type_real ();
-Type type_boolean ();
-Type type_char ();
-Type type_arrayI (int dim, Type type);
-Type type_arrayII (Type type);
-Type type_pointer (Type type);
-Type type_string ();
-
 Type type_integer ()
 {
    Type result = new(sizeof(struct Type_tag));
