@@ -52,8 +52,8 @@ std::vector<int> rt_stack;
 %token T_comma ','
 
 %nonassoc<op> '=' '>' '<' ">=" "<=" "<>"
-%left<op> '+' '-' "or" 
-%left<op> '*' '/' "div" "mod" "and" 
+%left<op> '+' '-' "or"
+%left<op> '*' '/' "div" "mod" "and"
 %nonassoc<op> "not"
 %nonassoc<op> '^'
 %nonassoc<op> '@'
@@ -78,8 +78,8 @@ std::vector<int> rt_stack;
 	Var_ntl *var_name_type_list;
 	Formal_l *formal_list;
 	Expr_l *expr_list;
-	Unop *unop;
-	Binop *binop;
+	UnOp *unop;
+	BinOp *binop;
 	char op[3];
 }
 

@@ -45,7 +45,10 @@ protected:
 
 // class Stmt: public AST {};
 //
-// class Lvalue: public Expr {};
+class Lvalue: public Expr {
+public:
+  virtual int eval() const = 0;
+};
 
 class Rvalue: public Expr {
 //sem(), type_check(type t)->bool, eval()
@@ -83,7 +86,7 @@ private:
   int offset;
 };
 
-class Binop: public Rvalue {
+class BinOp: public Rvalue {
 public:
   BinOp(Expr *l, char *o, Expr *r): left(l), op(o), right(r) {}
   ~BinOp() { delete left; delete right; }
@@ -91,14 +94,6 @@ public:
     out << op << "(" << *left << ", " << *right << ")";
   }
   virtual void sem() override {
-
-//sem(), type_check(type t)->bool, eval()
-//+-* 2 int->int, αλλιως real,/ παντα real, div mod δεχονται μονο ιντ->ιντ
-//= <> ->bool, παιρνει 2αριθμ, αλλιως ίδιου τυπου (οχι πινακα) συγκρ οι δυαδ αναπ
-//or and  bool->bool με βραχυκυκλ
-// < > <= >= real/integer->boolean
-//ERROR αντι για exit(1)
-
     if (( left->type_check(TYPE_arrayI) ) || ( left->type_check(TYPE_arrayII) ) || ( right->type_check(TYPE_arrayI) ) || ( right->type_check(TYPE_arrayII) )){
 	exit(1);
 	}
@@ -187,13 +182,7 @@ private:
   Expr *right;
 };
 
-class Unop: public Rvalue {
-//με ένα τελούμενο + και - αριθμητικού τύπου, αποτέλεσμα ίδιου τύπου
-//not bool->bool
-//@ επιστρέφει τη διεύθυνση ενός αντικειμένου. Αν l είναι μια l-value τύπου t, τότε @l
-// είναι μια r-value τύπου ^t. Η τιμή της είναι η διεύθυνση του αντικειμένου που αντιστοιχεί στην l
-// και είναι πάντα διαφορετική του μηδενικού δείκτη.---> αλλη κλαση;
-
+class UnOp: public Rvalue {
 public:
   UnOp(char *o, Expr *r): op(o), right(r) {}
   ~UnOp() { delete right; }
@@ -220,6 +209,7 @@ public:
 		exit(1);
 	}
     }
+  }
   virtual int eval() const override {
     switch (op) {
     case "+": return right->eval();
