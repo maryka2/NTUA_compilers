@@ -1,6 +1,7 @@
 #pragma once
 #include <cstdlib>
 #include <iostream>
+#include <cstring>
 #include <map>
 #include <vector>
 #include "symbol.hpp"
@@ -8,15 +9,15 @@
 
 inline std::ostream& operator<<(std::ostream &out, Type t) {
   switch (t->kind) {
-  case TYPE_integer: out << "integer"; break;
-  case TYPE_real: out << "real"; break;
-  case TYPE_boolean: out << "boolean"; break;
-  case TYPE_char: out << "char"; break;
-  case TYPE_arrayI: out << "arrayI"; break;
-  case TYPE_arrayII: out << "arrayII"; break;
-  case TYPE_pointer: out << "pointer"; break;
-  case TYPE_string: out << "string"; break;
-}
+    case TYPE_integer: out << "integer"; break;
+    case TYPE_real: out << "real"; break;
+    case TYPE_boolean: out << "boolean"; break;
+    case TYPE_char: out << "char"; break;
+    case TYPE_arrayI: out << "arrayI"; break;
+    case TYPE_arrayII: out << "arrayII"; break;
+    case TYPE_pointer: out << "pointer"; break;
+    case TYPE_string: out << "string"; break;
+  }
   return out;
 }
 
@@ -34,13 +35,13 @@ inline std::ostream& operator<<(std::ostream &out, const AST &t) {
 
 
 class Expr: public AST {
+protected:
+  Type type;
 public:
   bool type_check(myType t) {
     sem();
     return (type->kind == t);
   }
-protected:
-  Type type;
 };
 
 // class Stmt: public AST {};
@@ -51,11 +52,11 @@ public:
 };
 
 class Rvalue: public Expr {
+protected:
+  Type type;
 //sem(), type_check(type t)->bool, eval()
 public:
   virtual int eval() const = 0;
-protected:
-  Type type;
 };
 
 // class Pointer: public Lvalue {};
@@ -68,6 +69,9 @@ protected:
 
 //pif
 class Id: public Lvalue {
+private:
+  char *var;
+  int offset;
 public:
   Id(char *v): var(v), offset(-1) {}
   virtual void printOn(std::ostream &out) const override {
@@ -81,12 +85,13 @@ public:
     type = e->type;
     offset = e->offset;
   }
-private:
-  char *var;
-  int offset;
 };
 
 class BinOp: public Rvalue {
+private:
+  Expr *left;
+  char *op;
+  Expr *right;
 public:
   BinOp(Expr *l, char *o, Expr *r): left(l), op(o), right(r) {}
   ~BinOp() { delete left; delete right; }
@@ -94,95 +99,127 @@ public:
     out << op << "(" << *left << ", " << *right << ")";
   }
   virtual void sem() override {
-    if (( left->type_check(TYPE_arrayI) ) || ( left->type_check(TYPE_arrayII) ) || ( right->type_check(TYPE_arrayI) ) || ( right->type_check(TYPE_arrayII) )){
-	exit(1);
-	}
-    if (( left->type_check(TYPE_pointer) ) && !( right->type_check(TYPE_pointer) )){
-	exit(1);
-	}
-    if (( left->type_check(TYPE_char) ) && !( right->type_check(TYPE_char) )){
-	exit(1);
-	}
-    if (( left->type_check(TYPE_boolean) ) && !( right->type_check(TYPE_boolean) )){
-	exit(1);
-	}
-    if ((( left->type_check(TYPE_integer) ) && !( right->type_check(TYPE_integer) )) || (( left->type_check(TYPE_integer) ) && !( right->type_check(TYPE_real) ))){
-	exit(1);
-	}
-    if ((( left->type_check(TYPE_real) ) && !( right->type_check(TYPE_integer) )) || (( left->type_check(TYPE_real) ) && !( right->type_check(TYPE_real) ))){
-	exit(1);
-	}
+    if (( left->type_check(TYPE_arrayI) ) || ( left->type_check(TYPE_arrayII) ) || ( right->type_check(TYPE_arrayI) ) || ( right->type_check(TYPE_arrayII) )) {
+      exit(1);
+    }
+    if (( left->type_check(TYPE_pointer) ) && !( right->type_check(TYPE_pointer) )) {
+      exit(1);
+    }
+    if (( left->type_check(TYPE_char) ) && !( right->type_check(TYPE_char) )) {
+      exit(1);
+    }
+    if (( left->type_check(TYPE_boolean) ) && !( right->type_check(TYPE_boolean) )) {
+      exit(1);
+    }
+    if ((( left->type_check(TYPE_integer) ) && !( right->type_check(TYPE_integer) )) || (( left->type_check(TYPE_integer) ) && !( right->type_check(TYPE_real) ))) {
+      exit(1);
+    }
+    if ((( left->type_check(TYPE_real) ) && !( right->type_check(TYPE_integer) )) || (( left->type_check(TYPE_real) ) && !( right->type_check(TYPE_real) ))) {
+      exit(1);
+    }
 
-    switch (op) {
-    case "+": case "-": case "*":
-	if (( left->type_check(TYPE_integer) ) && ( right->type_check(TYPE_integer) ){
-		type = TYPE_integer; break;
-	}
-	else if (( left->type_check(TYPE_real) ) || ( right->type_check(TYPE_real) ){
-		type = TYPE_real; break;
-	}
-	else {
-		exit(1);
-	}
-    case "/":
-	if (( left->type_check(TYPE_integer) ) || ( left->type_check(TYPE_real)){
-		type = TYPE_real; break;
-	}
-	else {
-		exit(1);
-	}
-    case "div": case "mod":
-      if (( left->type_check(TYPE_integer) ) && ( right->type_check(TYPE_integer)){
-		type = TYPE_integer; break;
-	}
-	else {
-		exit(1);
-	}
-    case "=": case "<>":
-      type = TYPE_boolean; break;
-    case "or": case "and":
-      if (( left->type_check(TYPE_boolean)){
-		type = TYPE_boolean; break;
-	}
-	else {
-		exit(1);
-	}
-    case "<": case ">": case ">=": case "<=":
-	if (( left->type_check(TYPE_integer) ) || ( left->type_check(TYPE_real)){
-		type = TYPE_boolean; break;
-	}
-	else {
-		exit(1);
-	}
+    if (!std::strcmp(op, "+") || !std::strcmp(op, "-") || !std::strcmp(op, "*")) {
+      if (( left->type_check(TYPE_integer) ) && ( right->type_check(TYPE_integer) )) {
+        type = TYPE_integer;
+      }
+      else if (( left->type_check(TYPE_real) ) || ( right->type_check(TYPE_real) )) {
+        type = TYPE_real;
+      }
+      else {
+        exit(1);
+      }
+    }
+    else if (!std::strcmp(op, "/")) {
+      if (( left->type_check(TYPE_integer) ) || ( left->type_check(TYPE_real) )) {
+        type = TYPE_real;
+      }
+      else {
+        exit(1);
+      }
+    }
+    else if (!std::strcmp(op, "div") || !std::strcmp(op, "mod")) {
+      if (( left->type_check(TYPE_integer) ) && ( right->type_check(TYPE_integer) )) {
+        type = TYPE_integer;
+      }
+      else {
+        exit(1);
+      }
+    }
+    else if (!std::strcmp(op, "=") || !std::strcmp(op, "<>")) {
+      type = TYPE_boolean;
+    }
+    else if (!std::strcmp(op, "or") || !std::strcmp(op, "and")) {
+      if (( left->type_check(TYPE_boolean) )) {
+        type = TYPE_boolean;
+      }
+      else {
+        exit(1);
+      }
+    }
+    else if (!std::strcmp(op, "<") || !std::strcmp(op, ">") || !std::strcmp(op, ">=") || !std::strcmp(op, "<=")) {
+      if (( left->type_check(TYPE_integer) ) || ( left->type_check(TYPE_real) )) {
+        type = TYPE_boolean;
+      }
+      else {
+        exit(1);
+      }
+    }
+    else {
+      exit(1);
     }
 
   }
   virtual int eval() const override {
-    switch (op) {
-    case "+": return left->eval() + right->eval();
-    case "-": return left->eval() - right->eval();
-    case "*": return left->eval() * right->eval();
-    case "/": return left->eval() / right->eval();
-    case "div": return left->eval() / right->eval();
-    case "mod": return left->eval() % right->eval();
-    case "=": return left->eval() == right->eval();
-    case "<>": return left->eval() != right->eval();
-    case "or": return left->eval() || right->eval();
-    case "and": return left->eval() && right->eval();
-    case ">": return left->eval() > right->eval();
-    case "<": return left->eval() < right->eval();
-    case ">=": return left->eval() >= right->eval();
-    case "<=": return left->eval() <= right->eval();
+    if (!std::strcmp(op, "+")) {
+      return left->eval() + right->eval();
     }
-    return 0;  // this will never be reached.
+    if (!std::strcmp(op, "-")) {
+      return left->eval() - right->eval();
+    }
+    if (!std::strcmp(op, "*")) {
+      return left->eval() * right->eval();
+    }
+    if (!std::strcmp(op, "/")) {
+      return left->eval() / right->eval();
+    }
+    if (!std::strcmp(op, "div")) {
+      return left->eval() / right->eval();
+    }
+    if (!std::strcmp(op, "mod")) {
+      return left->eval() % right->eval();
+    }
+    if (!std::strcmp(op, "=")) {
+      return left->eval() == right->eval();
+    }
+    if (!std::strcmp(op, "<>")) {      
+      return left->eval() != right->eval();
+    }
+    if (!std::strcmp(op, "or")) {
+      return left->eval() || right->eval();
+    }
+    if (!std::strcmp(op, "and")) {
+      return left->eval() && right->eval();
+    }
+    if (!std::strcmp(op, ">")) {
+      return left->eval() > right->eval();
+    }
+    if (!std::strcmp(op, "<")) {
+      return left->eval() < right->eval();
+    }
+    if (!std::strcmp(op, ">=")) {
+      return left->eval() >= right->eval();
+    }
+    if (!std::strcmp(op, "<=")) {
+      return left->eval() <= right->eval();
+    }
+    exit(1);  // this will never be reached.
   }
-private:
-  Expr *left;
-  char *op;
-  Expr *right;
 };
 
 class UnOp: public Rvalue {
+private:
+  char *op;
+  Expr *right;
 public:
   UnOp(char *o, Expr *r): op(o), right(r) {}
   ~UnOp() { delete right; }
@@ -190,39 +227,42 @@ public:
     out << op << "(" << *right << ")";
   }
   virtual void sem() override {
-    if (op=="+") || (op=="-")){
-	if (( left->type_check(TYPE_integer) ) && ( right->type_check(TYPE_integer) )){
-		type = TYPE_integer; break;
-	}
-	else if (( left->type_check(TYPE_real) ) && ( right->type_check(TYPE_real) )){
-		type = TYPE_integer; break;
-	}
-	else {
-		exit(1);
-	}
+    if (!std::strcmp(op, "+") || !std::strcmp(op, "-")) {
+      if (( left->type_check(TYPE_integer) ) && ( right->type_check(TYPE_integer) )) {
+        type = TYPE_integer;
+      }
+      else if (( left->type_check(TYPE_real) ) && ( right->type_check(TYPE_real) )) {
+        type = TYPE_integer;
+      }
+      else {
+        exit(1);
+      }
     }
-    else if (op=="not"){
-	if (( left->type_check(TYPE_boolean) ) && ( right->type_check(TYPE_boolean) )){
-		type = TYPE_boolean; break;
-	}
-	else {
-		exit(1);
-	}
+    else if (!std::strcmp(op, "not")) {
+      if (( left->type_check(TYPE_boolean) ) && ( right->type_check(TYPE_boolean) )) {
+        type = TYPE_boolean;
+      }
+      else {
+        exit(1);
+      }
+    }
+    else {
+      exit(1);  // Unreachable
     }
   }
   virtual int eval() const override {
-    switch (op) {
-    case "+": return right->eval();
-    case "-": return (-1)*right->eval();
-    case "not": return !right->eval();
+    if (!std::strcmp(op, "+")) {
+      return right->eval();
     }
-    return 0;  // this will never be reached.
+    if (!std::strcmp(op, "-")) {
+      return (-1)*right->eval();
+    }
+    if (!std::strcmp(op, "not")) {
+      return !right->eval();
+    }
+    exit(1);  // this will never be reached.
   }
-private:
-  char *op;
-  Expr *right;
 };
-
 
 //pif
 class Nil: public Rvalue {
@@ -237,6 +277,8 @@ class Nil: public Rvalue {
 
 //pif
 class Charconst: public Rvalue {
+private:
+  char char_const;
 public:
   Charconst(char c): char_const(c) {}
   virtual void printOn(std::ostream &out) const override {
@@ -244,41 +286,41 @@ public:
   }
   virtual char eval() const override { return char_const; }
   virtual void sem() override { type = TYPE_char; }
-private:
-  char char_const;
 };
 
 
 //pif
 class Realconst: public Rvalue {
+private:
+  double num;
 public:
-  Realconst(real r): num(r) {}
+  Realconst(double r): num(r) {}
   virtual void printOn(std::ostream &out) const override {
     out << "Realconst(" << num << ")";
   }
-  virtual real eval() const override { return num; }
+  virtual double eval() const override { return num; }
   virtual void sem() override { type = TYPE_real; }
-private:
-  real num;
 };
 
 
 //pif
 class Bool: public Rvalue {
+private:
+  string boolean;
 public:
   Bool(string s): boolean(s) {}
   virtual void printOn(std::ostream &out) const override {
     out << "Bool(" << boolean << ")";
   }
-  virtual bool eval() const override { return (boolean=="true") }
+  virtual bool eval() const override { return (boolean == "true") }
   virtual void sem() override { type = TYPE_boolean; }
-private:
-  string boolean;
 };
 
 
 //pif
 class Intconst: public Rvalue {
+private:
+  int num;
 public:
   Intconst(int n): num(n) {}
   virtual void printOn(std::ostream &out) const override {
@@ -286,8 +328,6 @@ public:
   }
   virtual int eval() const override { return num; }
   virtual void sem() override { type = TYPE_integer; }
-private:
-  int num;
 };
 
 // class Dispose1: public Stmt {};
@@ -307,6 +347,9 @@ private:
 
 //pif
 class While: public Stmt {
+private:
+  Expr *expr;
+  Stmt *stmt;
 public:
   While(Expr *e, Stmt *s): expr(e), stmt(s) {}
   ~While() { delete expr; delete stmt; }
@@ -326,14 +369,15 @@ public:
       stmt->run();
     }
   }
-private:
-  Expr *expr;
-  Stmt *stmt;
 };
 
 
 //pif
 class If: public Stmt {
+private:
+  Expr *cond;
+  Stmt *stmt1;
+  Stmt *stmt2;
 public:
   If(Expr *c, Stmt *s1, Stmt *s2 = nullptr):
     cond(c), stmt1(s1), stmt2(s2) {}
@@ -358,10 +402,6 @@ public:
     else if (stmt2 != nullptr)
       stmt2->run();
   }
-private:
-  Expr *cond;
-  Stmt *stmt1;
-  Stmt *stmt2;
 };
 
 // class Call: public Stmt {};
