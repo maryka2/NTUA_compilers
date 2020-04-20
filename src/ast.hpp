@@ -44,7 +44,11 @@ public:
     sem();
     return (type->kind == t);
   }
-  virtual int eval() const = 0;
+  virtual Value eval() const {
+    Value value;
+    value.integer_value = 0;
+    return value;
+  }
 };
 
 
@@ -56,7 +60,7 @@ public:
 
 class Lvalue: public Expr {
 public:
-  virtual int eval() const override {
+  virtual Value eval() const override {
     exit(1);
   }
 };
@@ -66,7 +70,7 @@ protected:
   Type type;
 //sem(), type_check(type t)->bool, eval()
 public:
-  virtual int eval() const override {
+  virtual Value eval() const override {
     exit(1);
   }
 };
@@ -130,10 +134,10 @@ public:
 
     if (!std::strcmp(op, "+") || !std::strcmp(op, "-") || !std::strcmp(op, "*")) {
       if (( left->type_check(TYPE_integer) ) && ( right->type_check(TYPE_integer) )) {
-        type->kind=TYPE_integer;
+        type->kind = TYPE_integer;
       }
       else if (( left->type_check(TYPE_real) ) || ( right->type_check(TYPE_real) )) {
-        type->kind=TYPE_real;
+        type->kind = TYPE_real;
       }
       else {
         exit(1);
@@ -141,7 +145,7 @@ public:
     }
     else if (!std::strcmp(op, "/")) {
       if (( left->type_check(TYPE_integer) ) || ( left->type_check(TYPE_real) )) {
-        type->kind=TYPE_real;
+        type->kind = TYPE_real;
       }
       else {
         exit(1);
@@ -149,18 +153,18 @@ public:
     }
     else if (!std::strcmp(op, "div") || !std::strcmp(op, "mod")) {
       if (( left->type_check(TYPE_integer) ) && ( right->type_check(TYPE_integer) )) {
-        type->kind=TYPE_integer;
+        type->kind = TYPE_integer;
       }
       else {
         exit(1);
       }
     }
     else if (!std::strcmp(op, "=") || !std::strcmp(op, "<>")) {
-      type->kind=TYPE_boolean;
+      type->kind = TYPE_boolean;
     }
     else if (!std::strcmp(op, "or") || !std::strcmp(op, "and")) {
       if (( left->type_check(TYPE_boolean) )) {
-        type->kind=TYPE_boolean;
+        type->kind = TYPE_boolean;
       }
       else {
         exit(1);
@@ -168,7 +172,7 @@ public:
     }
     else if (!std::strcmp(op, "<") || !std::strcmp(op, ">") || !std::strcmp(op, ">=") || !std::strcmp(op, "<=")) {
       if (( left->type_check(TYPE_integer) ) || ( left->type_check(TYPE_real) )) {
-        type->kind=TYPE_boolean;
+        type->kind = TYPE_boolean;
       }
       else {
         exit(1);
@@ -179,7 +183,7 @@ public:
     }
 
   }
-  virtual int eval() const override {
+  virtual Value eval() const override {
     if (!std::strcmp(op, "+")) {
       return left->eval() + right->eval();
     }
@@ -239,10 +243,10 @@ public:
   virtual void sem() override {
     if (!std::strcmp(op, "+") || !std::strcmp(op, "-")) {
       if (right->type_check(TYPE_integer)) {
-        type->kind=TYPE_integer;
+        type->kind = TYPE_integer;
       }
       else if (right->type_check(TYPE_real) ) {
-        type->kind=TYPE_integer;
+        type->kind = TYPE_integer;
       }
       else {
         exit(1);
@@ -250,7 +254,7 @@ public:
     }
     else if (!std::strcmp(op, "not")) {
       if ( right->type_check(TYPE_boolean) ) {
-        type->kind=TYPE_boolean;
+        type->kind = TYPE_boolean;
       }
       else {
         exit(1);
@@ -260,7 +264,7 @@ public:
       exit(1);  // Unreachable
     }
   }
-  virtual int eval() const override {
+  virtual Value eval() const override {
     if (!std::strcmp(op, "+")) {
       return right->eval();
     }
@@ -280,7 +284,11 @@ class Nil: public Rvalue {
   virtual void printOn(std::ostream &out) const override {
     out << "Nil";
   }
-  virtual void* eval() const override { return nullptr; }
+  virtual Value eval() const override {
+    Value value;
+    value.pointer_value = nullptr;
+    return value;
+  }
   virtual void sem() override { type->kind=TYPE_pointer; }
 };
 
@@ -294,7 +302,11 @@ public:
   virtual void printOn(std::ostream &out) const override {
     out << "Charconst(" << char_const << ")";
   }
-  virtual char eval() const override { return char_const; }
+  virtual Value eval() const override {
+    Value value;
+    value.char_value = char_const;
+    return value;
+  }
   virtual void sem() override { type->kind=TYPE_char; }
 };
 
@@ -308,7 +320,11 @@ public:
   virtual void printOn(std::ostream &out) const override {
     out << "Realconst(" << num << ")";
   }
-  virtual double eval() const override { return num; }
+  virtual Value eval() const override {
+    Value value;
+    value.real_value = num;
+    return value;
+  }
   virtual void sem() override { type->kind=TYPE_real; }
 };
 
@@ -322,7 +338,11 @@ public:
   virtual void printOn(std::ostream &out) const override {
     out << "Bool(" << boolean << ")";
   }
-  virtual bool eval() const override { return (boolean == "true"); }
+  virtual Value eval() const override {
+    Value value;
+    value.bool_value = (boolean == "true");
+    return value;
+  }
   virtual void sem() override { type->kind=TYPE_boolean; }
 };
 
@@ -336,7 +356,11 @@ public:
   virtual void printOn(std::ostream &out) const override {
     out << "Intconst(" << num << ")";
   }
-  virtual int eval() const override { return num; }
+  virtual Value eval() const override {
+    Value value;
+    value.integer_value = num;
+    return value;
+  }
   virtual void sem() override { type->kind=TYPE_integer; }
 };
 
@@ -380,7 +404,6 @@ public:
     }
   }
 };
-
 
 //pif
 class If: public Stmt {
