@@ -42,13 +42,21 @@ public:
     sem();
     return (type->kind == t);
   }
+  virtual int eval() const = 0;
 };
 
-// class Stmt: public AST {};
-//
+
+class Stmt: public AST {
+public:
+  virtual void run() const = 0;
+};
+
+
 class Lvalue: public Expr {
 public:
-  virtual int eval() const = 0;
+  virtual int eval() const override {
+    exit(1);
+  }
 };
 
 class Rvalue: public Expr {
@@ -56,7 +64,9 @@ protected:
   Type type;
 //sem(), type_check(type t)->bool, eval()
 public:
-  virtual int eval() const = 0;
+  virtual int eval() const override {
+    exit(1);
+  }
 };
 
 // class Pointer: public Lvalue {};
@@ -120,10 +130,10 @@ public:
 
     if (!std::strcmp(op, "+") || !std::strcmp(op, "-") || !std::strcmp(op, "*")) {
       if (( left->type_check(TYPE_integer) ) && ( right->type_check(TYPE_integer) )) {
-        type = TYPE_integer;
+        type->kind=TYPE_integer;
       }
       else if (( left->type_check(TYPE_real) ) || ( right->type_check(TYPE_real) )) {
-        type = TYPE_real;
+        type->kind=TYPE_real;
       }
       else {
         exit(1);
@@ -131,7 +141,7 @@ public:
     }
     else if (!std::strcmp(op, "/")) {
       if (( left->type_check(TYPE_integer) ) || ( left->type_check(TYPE_real) )) {
-        type = TYPE_real;
+        type->kind=TYPE_real;
       }
       else {
         exit(1);
@@ -139,18 +149,18 @@ public:
     }
     else if (!std::strcmp(op, "div") || !std::strcmp(op, "mod")) {
       if (( left->type_check(TYPE_integer) ) && ( right->type_check(TYPE_integer) )) {
-        type = TYPE_integer;
+        type->kind=TYPE_integer;
       }
       else {
         exit(1);
       }
     }
     else if (!std::strcmp(op, "=") || !std::strcmp(op, "<>")) {
-      type = TYPE_boolean;
+      type->kind=TYPE_boolean;
     }
     else if (!std::strcmp(op, "or") || !std::strcmp(op, "and")) {
       if (( left->type_check(TYPE_boolean) )) {
-        type = TYPE_boolean;
+        type->kind=TYPE_boolean;
       }
       else {
         exit(1);
@@ -158,7 +168,7 @@ public:
     }
     else if (!std::strcmp(op, "<") || !std::strcmp(op, ">") || !std::strcmp(op, ">=") || !std::strcmp(op, "<=")) {
       if (( left->type_check(TYPE_integer) ) || ( left->type_check(TYPE_real) )) {
-        type = TYPE_boolean;
+        type->kind=TYPE_boolean;
       }
       else {
         exit(1);
@@ -191,7 +201,7 @@ public:
     if (!std::strcmp(op, "=")) {
       return left->eval() == right->eval();
     }
-    if (!std::strcmp(op, "<>")) {      
+    if (!std::strcmp(op, "<>")) {
       return left->eval() != right->eval();
     }
     if (!std::strcmp(op, "or")) {
@@ -228,19 +238,19 @@ public:
   }
   virtual void sem() override {
     if (!std::strcmp(op, "+") || !std::strcmp(op, "-")) {
-      if (( left->type_check(TYPE_integer) ) && ( right->type_check(TYPE_integer) )) {
-        type = TYPE_integer;
+      if (right->type_check(TYPE_integer)) {
+        type->kind=TYPE_integer;
       }
-      else if (( left->type_check(TYPE_real) ) && ( right->type_check(TYPE_real) )) {
-        type = TYPE_integer;
+      else if (right->type_check(TYPE_real) ) {
+        type->kind=TYPE_integer;
       }
       else {
         exit(1);
       }
     }
     else if (!std::strcmp(op, "not")) {
-      if (( left->type_check(TYPE_boolean) ) && ( right->type_check(TYPE_boolean) )) {
-        type = TYPE_boolean;
+      if ( right->type_check(TYPE_boolean) ) {
+        type->kind=TYPE_boolean;
       }
       else {
         exit(1);
@@ -271,7 +281,7 @@ class Nil: public Rvalue {
     out << "Nil";
   }
   virtual void* eval() const override { return nullptr; }
-  virtual void sem() override { type = TYPE_pointer; }
+  virtual void sem() override { type->kind=TYPE_pointer; }
 };
 
 
@@ -285,7 +295,7 @@ public:
     out << "Charconst(" << char_const << ")";
   }
   virtual char eval() const override { return char_const; }
-  virtual void sem() override { type = TYPE_char; }
+  virtual void sem() override { type->kind=TYPE_char; }
 };
 
 
@@ -299,7 +309,7 @@ public:
     out << "Realconst(" << num << ")";
   }
   virtual double eval() const override { return num; }
-  virtual void sem() override { type = TYPE_real; }
+  virtual void sem() override { type->kind=TYPE_real; }
 };
 
 
@@ -312,8 +322,8 @@ public:
   virtual void printOn(std::ostream &out) const override {
     out << "Bool(" << boolean << ")";
   }
-  virtual bool eval() const override { return (boolean == "true") }
-  virtual void sem() override { type = TYPE_boolean; }
+  virtual bool eval() const override { return (boolean == "true"); }
+  virtual void sem() override { type->kind=TYPE_boolean; }
 };
 
 
@@ -327,7 +337,7 @@ public:
     out << "Intconst(" << num << ")";
   }
   virtual int eval() const override { return num; }
-  virtual void sem() override { type = TYPE_integer; }
+  virtual void sem() override { type->kind=TYPE_integer; }
 };
 
 // class Dispose1: public Stmt {};
@@ -388,7 +398,7 @@ public:
     out << ")";
   }
   virtual void sem() override {
-    if (cond->type_check(TYPE_bool)){
+    if (cond->type_check(TYPE_boolean)){
       stmt1->sem();
       if (stmt2 != nullptr) stmt2->sem();
     }

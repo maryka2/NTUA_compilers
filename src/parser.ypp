@@ -51,14 +51,13 @@ std::vector<int> rt_stack;
 %token T_colon ':'
 %token T_comma ','
 
-
 %nonassoc<op> '=' '>' '<' ">=" "<=" "<>"
-%left<op> '+' '-' "or" 
-%left<op> '*' '/' "div" "mod" "and" 
-%precedence<op> "not"
-%precedence<op> '^'
-%precedence<op> '@'
-%precedence<op> '[' ']'
+%left<op> '+' '-' "or"
+%left<op> '*' '/' "div" "mod" "and"
+%nonassoc<op> "not"
+%nonassoc<op> '^'
+%nonassoc<op> '@'
+%nonassoc<op> '[' ']'
 
 %expect 1;
 
@@ -79,8 +78,8 @@ std::vector<int> rt_stack;
 	Var_ntl *var_name_type_list;
 	Formal_l *formal_list;
 	Expr_l *expr_list;
-	Unop *unop;
-	Binop *binop;
+	UnOp *unop;
+	BinOp *binop;
 	char op[3];
 }
 
@@ -103,8 +102,6 @@ std::vector<int> rt_stack;
 %type<formal_list> formal_list
 %type<expr_list> expr_list
 %type<type> type
-%type<unop> unop
-%type<binop> binop
 
 
 %%
@@ -165,7 +162,7 @@ block				: "begin" stmt_list "end"		{ $$ = $2; }
 
 
 stmt_list			: /*nothing*/				{ $$ = new Block(); }
-				| stmt_list stmt ';'			{ $1->append_name_type($2); $$ = $1; }
+				| stmt_list stmt ';'			{ $1->append_stmt($2); $$ = $1; }
 				;
 
 
@@ -203,31 +200,28 @@ rvalue				: T_intconst		{ $$ = new Intconst($1); }
 				| '(' rvalue ')'	{ $$ = $2; }
 				| "nil"			{ $$ = new Nil(); }
 				| call			{ $$ = $1; }
-				| '@' lvalue		{ $$ = new Op($1, $2); }
-			        | unop expr   		{ $$ = new UnOp($1, $2); }
-			        | expr binop expr  		{ $$ = new BinOp($1, $2, $3); }
+				| '@' expr		{ $$ = new Op($1, $2); }
+			        | "not" expr   		{ $$ = new UnOp($1, $2); }
+			        | '+' expr   		{ $$ = new UnOp($1, $2); }
+			        | '-' expr   		{ $$ = new UnOp($1, $2); }
+			        | expr '+' expr  		{ $$ = new BinOp($1, $2, $3); }
+			        | expr '-' expr  		{ $$ = new BinOp($1, $2, $3); }
+			        | expr '*' expr  		{ $$ = new BinOp($1, $2, $3); }
+			        | expr '/' expr  		{ $$ = new BinOp($1, $2, $3); }
+			        | expr "div" expr  		{ $$ = new BinOp($1, $2, $3); }
+			        | expr "mod" expr  		{ $$ = new BinOp($1, $2, $3); }
+			        | expr "or" expr  		{ $$ = new BinOp($1, $2, $3); }
+			        | expr "and" expr  		{ $$ = new BinOp($1, $2, $3); }
+			        | expr '=' expr  		{ $$ = new BinOp($1, $2, $3); }
+			        | expr "<>" expr  		{ $$ = new BinOp($1, $2, $3); }
+			        | expr '<' expr  		{ $$ = new BinOp($1, $2, $3); }
+			        | expr "<=" expr  		{ $$ = new BinOp($1, $2, $3); }
+			        | expr '>' expr  		{ $$ = new BinOp($1, $2, $3); }
+			        | expr ">=" expr  		{ $$ = new BinOp($1, $2, $3); }
 			        ;
-        
-unop    : "not"  	{ $$ = new Not(); }
-        | '+'		{ $$ = $1; }
-        | '-'		{ $$ = $1; }
-        ;
-        
-binop   : '+'		{ $$ = $1; }
-        | '-'		{ $$ = $1; }
-        | '*'		{ $$ = $1; }
-        | '/'		{ $$ = $1; }
-        | "div"		{ $$ = new Div(); }
-        | "mod"		{ $$ = new Mod(); }
-        | "or"		{ $$ = new Or(); }
-        | "and"		{ $$ = new And(); }
-        | '='		{ $$ = $1; }
-        | "<>"		{ $$ = new Ne(); }
-        | '<'		{ $$ = $1; }
-        | "<="		{ $$ = new Le(); }
-        | '>'		{ $$ = $1; }
-        | ">="		{ $$ = new Ge(); }
-	;
+
+
+
 
 expr				: lvalue		{ $$ = $1; }
 				| rvalue		{ $$ = $1; }
@@ -239,7 +233,7 @@ call				: T_id '(' ')'			{ $$ = new Call($1); }
 				;
 
 expr_list			: expr			{ $$ = $1; }
-				|  expr_list ',' expr	{ $1->append_name_type($3); $$ = $1; }
+				|  expr_list ',' expr	{ $1->append_expr($3); $$ = $1; }
 				;
 
 %%
