@@ -184,49 +184,224 @@ public:
 
   }
   virtual Value eval() const override {
+    Value value;
     if (!std::strcmp(op, "+")) {
-      return left->eval() + right->eval();
+      if ( left->type_check(TYPE_integer) ) {
+        if  ( right->type_check(TYPE_integer) ) {
+          value.integer_value = left->eval().integer_value + right->eval().integer_value;
+        }
+        else if ( right->type_check(TYPE_real) ){
+          value.real_value = eft->eval().integer_value + right->eval().real_value;
+        }
+      }
+      else if ( left->type_check(TYPE_real) ){
+        if  ( right->type_check(TYPE_integer) ) {
+          value.real_value = left->eval().real_value + right->eval().integer_value;
+        }
+        else if ( right->type_check(TYPE_real) ){
+          value.real_value = left->eval().real_value + right->eval().real_value;
+        }
+      }
     }
     if (!std::strcmp(op, "-")) {
-      return left->eval() - right->eval();
+      if ( left->type_check(TYPE_integer) ) {
+        if  ( right->type_check(TYPE_integer) ) {
+          value.integer_value = left->eval().integer_value - right->eval().integer_value;
+        }
+        else if ( right->type_check(TYPE_real) ){
+          value.real_value = left->eval().integer_value - right->eval().real_value;
+        }
+      }
+      else if ( left->type_check(TYPE_real) ){
+        if  ( right->type_check(TYPE_integer) ) {
+          value.real_value = left->eval().real_value - right->eval().integer_value;
+        }
+        else if ( right->type_check(TYPE_real) ){
+          value.real_value = left->eval().real_value - right->eval().real_value;
+        }
+      }
     }
     if (!std::strcmp(op, "*")) {
-      return left->eval() * right->eval();
+      if ( left->type_check(TYPE_integer) ) {
+        if  ( right->type_check(TYPE_integer) ) {
+          value.integer_value = left->eval().integer_value * right->eval().integer_value;
+        }
+        else if ( right->type_check(TYPE_real) ){
+          value.real_value = left->eval().integer_value * right->eval().real_value;
+        }
+      }
+      else if ( left->type_check(TYPE_real) ){
+        if  ( right->type_check(TYPE_integer) ) {
+          value.real_value = left->eval().real_value * right->eval().integer_value;
+        }
+        else if ( right->type_check(TYPE_real) ){
+          value.real_value = left->eval().real_value * right->eval().real_value;
+        }
+      }
     }
     if (!std::strcmp(op, "/")) {
-      return left->eval() / right->eval();
+      if ( left->type_check(TYPE_integer) ) {
+        if  ( right->type_check(TYPE_integer) ) {
+          value.real_value = left->eval().integer_value / right->eval().integer_value;
+        }
+        else if ( right->type_check(TYPE_real) ){
+          value.real_value = left->eval().integer_value / right->eval().real_value;
+        }
+      }
+      else if ( left->type_check(TYPE_real) ){
+        if  ( right->type_check(TYPE_integer) ) {
+          value.real_value = left->eval().real_value / right->eval().integer_value;
+        }
+        else if ( right->type_check(TYPE_real) ){
+          value.real_value = left->eval().real_value / right->eval().real_value;
+        }
+      }
     }
     if (!std::strcmp(op, "div")) {
-      return left->eval() / right->eval();
+      value.integer_value = left->eval().integer_value / right->eval().integer_value;
     }
     if (!std::strcmp(op, "mod")) {
-      return left->eval() % right->eval();
+      value.integer_value = left->eval().integer_value % right->eval().integer_value;
     }
     if (!std::strcmp(op, "=")) {
-      return left->eval() == right->eval();
+      if ( left->type_check(TYPE_integer) ) {
+        if ( right->type_check(TYPE_integer) ) {
+          value.boolean_value = left->eval().integer_value == right->eval().integer_value;
+        }
+        else {
+          value.boolean_value = left->eval().integer_value == right->eval().real_value;
+        }
+      }
+      if ( left->type_check(TYPE_real) ) {
+        if ( right->type_check(TYPE_integer) ) {
+          value.boolean_value = left->eval().real_value == right->eval().integer_value;
+        }
+        else {
+          value.boolean_value = left->eval().real_value == right->eval().real_value;
+        }
+      }
+      if ( left->type_check(TYPE_boolean) ) {
+        value.boolean_value = left->eval().boolean_value == right->eval().boolean_value;
+      }
+      if ( left->type_check(TYPE_char) ) {
+        value.boolean_value = left->eval().char_value == right->eval().char_value;
+      }
+      if ( left->type_check(TYPE_pointer) ) {
+        value.boolean_value = left->eval().pointer_value == right->eval().pointer_value;
+      }
+      if ( left->type_check(TYPE_string) ) {
+        value.boolean_value = !std::strcmp(left->eval().string_value, right->eval().string_value);
+      }
     }
     if (!std::strcmp(op, "<>")) {
-      return left->eval() != right->eval();
+      if ( left->type_check(TYPE_integer) ) {
+        if ( right->type_check(TYPE_integer) ) {
+          value.boolean_value = left->eval().integer_value != right->eval().integer_value;
+        }
+        else {
+          value.boolean_value = left->eval().integer_value != right->eval().real_value;
+        }
+      }
+      if ( left->type_check(TYPE_real) ) {
+        if ( right->type_check(TYPE_integer) ) {
+          value.boolean_value = left->eval().real_value != right->eval().integer_value;
+        }
+        else {
+          value.boolean_value = left->eval().real_value != right->eval().real_value;
+        }
+      }
+      if ( left->type_check(TYPE_boolean) ) {
+        value.boolean_value = left->eval().boolean_value != right->eval().boolean_value;
+      }
+      if ( left->type_check(TYPE_char) ) {
+        value.boolean_value = left->eval().char_value != right->eval().char_value;
+      }
+      if ( left->type_check(TYPE_pointer) ) {
+        value.boolean_value = left->eval().pointer_value != right->eval().pointer_value;
+      }
+      if ( left->type_check(TYPE_string) ) {
+        value.boolean_value = std::strcmp(left->eval().string_value, right->eval().string_value);
+      }
     }
     if (!std::strcmp(op, "or")) {
-      return left->eval() || right->eval();
+      value.boolean_value = left->eval().boolean_value || right->eval().boolean_value;
     }
     if (!std::strcmp(op, "and")) {
-      return left->eval() && right->eval();
+      value.boolean_value = left->eval().boolean_value && right->eval().boolean_value;
     }
     if (!std::strcmp(op, ">")) {
-      return left->eval() > right->eval();
+      if ( left->type_check(TYPE_integer) ) {
+        if  ( right->type_check(TYPE_integer) ) {
+          value.boolean_value = left->eval().integer_value > right->eval().integer_value;
+        }
+        else if ( right->type_check(TYPE_real) ){
+          value.boolean_value = left->eval().integer_value > right->eval().real_value;
+        }
+      }
+      else if ( left->type_check(TYPE_real) ){
+        if  ( right->type_check(TYPE_integer) ) {
+          value.boolean_value = left->eval().real_value > right->eval().integer_value;
+        }
+        else if ( right->type_check(TYPE_real) ){
+          value.boolean_value = left->eval().real_value > right->eval().real_value;
+        }
+      }
     }
     if (!std::strcmp(op, "<")) {
-      return left->eval() < right->eval();
+      if ( left->type_check(TYPE_integer) ) {
+        if  ( right->type_check(TYPE_integer) ) {
+          value.boolean_value = left->eval().integer_value < right->eval().integer_value;
+        }
+        else if ( right->type_check(TYPE_real) ){
+          value.boolean_value = left->eval().integer_value < right->eval().real_value;
+        }
+      }
+      else if ( left->type_check(TYPE_real) ){
+        if  ( right->type_check(TYPE_integer) ) {
+          value.boolean_value = left->eval().real_value < right->eval().integer_value;
+        }
+        else if ( right->type_check(TYPE_real) ){
+          value.boolean_value = left->eval().real_value < right->eval().real_value;
+        }
+      }
     }
     if (!std::strcmp(op, ">=")) {
-      return left->eval() >= right->eval();
+      if ( left->type_check(TYPE_integer) ) {
+        if  ( right->type_check(TYPE_integer) ) {
+          value.boolean_value = left->eval().integer_value >= right->eval().integer_value;
+        }
+        else if ( right->type_check(TYPE_real) ){
+          value.boolean_value = left->eval().integer_value >= right->eval().real_value;
+        }
+      }
+      else if ( left->type_check(TYPE_real) ){
+        if  ( right->type_check(TYPE_integer) ) {
+          value.boolean_value = left->eval().real_value >= right->eval().integer_value;
+        }
+        else if ( right->type_check(TYPE_real) ){
+          value.boolean_value = left->eval().real_value >= right->eval().real_value;
+        }
+      }
     }
     if (!std::strcmp(op, "<=")) {
-      return left->eval() <= right->eval();
+      if ( left->type_check(TYPE_integer) ) {
+        if  ( right->type_check(TYPE_integer) ) {
+          value.boolean_value = left->eval().integer_value <= right->eval().integer_value;
+        }
+        else if ( right->type_check(TYPE_real) ){
+          value.boolean_value = left->eval().integer_value <= right->eval().real_value;
+        }
+      }
+      else if ( left->type_check(TYPE_real) ){
+        if  ( right->type_check(TYPE_integer) ) {
+          value.boolean_value = left->eval().real_value <= right->eval().integer_value;
+        }
+        else if ( right->type_check(TYPE_real) ){
+          value.boolean_value = left->eval().real_value <= right->eval().real_value;
+        }
+      }
     }
-    exit(1);  // this will never be reached.
+    return value;
   }
 };
 
@@ -246,7 +421,7 @@ public:
         type->kind = TYPE_integer;
       }
       else if (right->type_check(TYPE_real) ) {
-        type->kind = TYPE_integer;
+        type->kind = TYPE_real;
       }
       else {
         exit(1);
@@ -265,16 +440,27 @@ public:
     }
   }
   virtual Value eval() const override {
+    Value value;
     if (!std::strcmp(op, "+")) {
-      return right->eval();
+      if (right->type_check(TYPE_integer)) {
+        value.integer_value = right->eval().integer_value;
+      }
+      if (right->type_check(TYPE_real)) {
+        value.real_value = right->eval().real_value;
+      }
     }
     if (!std::strcmp(op, "-")) {
-      return (-1)*right->eval();
+      if (right->type_check(TYPE_integer)) {
+        value.integer_value = (-1)*right->eval().integer_value;
+      }
+      if (right->type_check(TYPE_real)) {
+        value.real_value = (-1)*right->eval().real_value;
+      }
     }
     if (!std::strcmp(op, "not")) {
-      return !right->eval();
+      value.boolean_value = !right->eval().boolean_value;
     }
-    exit(1);  // this will never be reached.
+    return value;
   }
 };
 
@@ -340,7 +526,7 @@ public:
   }
   virtual Value eval() const override {
     Value value;
-    value.bool_value = (boolean == "true");
+    value.boolean_value = (boolean == "true");
     return value;
   }
   virtual void sem() override { type->kind=TYPE_boolean; }
