@@ -191,7 +191,7 @@ public:
           value.integer_value = left->eval().integer_value + right->eval().integer_value;
         }
         else if ( right->type_check(TYPE_real) ){
-          value.real_value = eft->eval().integer_value + right->eval().real_value;
+          value.real_value = left->eval().integer_value + right->eval().real_value;
         }
       }
       else if ( left->type_check(TYPE_real) ){
@@ -585,7 +585,7 @@ public:
     }
   }
   virtual void run() const override {
-    while (expr->eval()){
+    while (expr->eval().boolean_value){
       stmt->run();
     }
   }
@@ -616,7 +616,7 @@ public:
     }
   }
   virtual void run() const override {
-    if (cond->eval())
+    if (cond->eval().boolean_value)
       stmt1->run();
     else if (stmt2 != nullptr)
       stmt2->run();
