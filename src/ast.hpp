@@ -7,6 +7,8 @@
 #include "symbol.hpp"
 #include "type.hpp"
 
+extern std::unordered_map<string, SymbolEntry*> globals;
+
 inline std::ostream& operator<<(std::ostream &out, Type t) {
   switch (t->kind) {
     case TYPE_integer: out << "integer"; break;
@@ -80,20 +82,18 @@ public:
 //pif
 class Id: public Lvalue {
 private:
-  char *var;
-  int offset;
+  string var;
 public:
-  Id(char *v): var(v), offset(-1) {}
+  Id(string v): var(v) {}
   virtual void printOn(std::ostream &out) const override {
-    out << "Id(" << var << "@" << offset << ")";
+    out << "Id(" << var << ")";
   }
-  virtual int eval() const override {
-    return rt_stack[offset];
+  virtual Value eval() const override {
+    return globals[var]->value;
   }
   virtual void sem() override {
     SymbolEntry *e = st.lookup(var);
     type = e->type;
-    offset = e->offset;
   }
 };
 

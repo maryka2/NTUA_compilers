@@ -5,8 +5,7 @@
 #include "lexer.hpp"
 
 SymbolTable st;
-std::vector<int> rt_stack;
-
+std::unordered_map<string, SymbolEntry*> globals;  // Global hash table
 %}
 
 %token T_and "and"
