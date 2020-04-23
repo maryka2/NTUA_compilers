@@ -140,7 +140,12 @@ class Id: public Lvalue {
 private:
   string var;
 public:
-  Id(string v): var(v) {}
+  Id(string v): var(v) {
+    
+  }
+  void set_type(Type t) {
+    type->kind = t;
+  }
   virtual void printOn(std::ostream &out) const override {
     out << "Id(" << var << ")";
   }
@@ -149,7 +154,9 @@ public:
   }
   virtual void sem() override {
     SymbolEntry *e = st.lookup(var);
-    type = e->type;
+    if (e != null) {
+      type = e->type;
+    }
   }
 };
 

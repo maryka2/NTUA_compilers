@@ -57,8 +57,7 @@ public:
   };
   SymbolEntry *lookup(string c) {
      if (globals.find(c) == globals.end()) {
-      std::cerr << "Unknown variable " << c << std::endl;
-      exit(1);  // If variable name isn't used exit compiler
+      return null;
      }
       return globals[c];  // If variable exists return pointer to its SymbolEntry
   }
