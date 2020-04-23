@@ -105,7 +105,7 @@ std::unordered_map<string, SymbolEntry*> globals;  // Global hash table
 
 %%
 
-program				: "program" T_id ';' body '.'	{ $$ = new Program($4); }
+program				: "program" T_id ';' body '.'	{ $$ = $4; }
 				;
 
 body				: local_list block	{ $1->merge($2); $$ = $1; }
@@ -115,10 +115,10 @@ local_list			: /*nothing*/		{ $$ = new Block(); }
 				| local_list local	{ $1->append_local($2); $$ = $1; }
 				;
 
-local 				: "var" var_name_type_list	{ $$ = new Var($2); }
-				| "label" var_name_list ';'	{ $$ = new Label($2); }
-				| header ';' body ';'		{ $$ = new Header_Body($1, $3); }
-				| "forward" header ';'		{ $$ = new Forward($2); }
+local 				: "var" var_name_type_list	{ $$ = new Local($2); }
+				| "label" var_name_list ';'	{ $$ = new Local($2); }
+				| header ';' body ';'		{ $$ = new Local($1, $3); }
+				| "forward" header ';'		{ $$ = new Local($2); }
 				;
 
 
@@ -127,9 +127,10 @@ var_name_type_list		: var_name_list ':' type ';'		{ $$ = new Name_Type($1, $3); 
 				| var_name_type_list var_name_list ':' type ';' { $1->append_name_type($2, $4); $$ = $1; }
 				;
 
+				//----------------------------------------------------------------
 
 var_name_list			: var_name_list ',' T_id 			{ $1->append_name($3); $$ = $1; }
-				| T_id						{ $$ = $1; }
+				| T_id						{ $$ = new Id($1); }
 				;
 
 header				: "procedure" T_id '(' formal_list ')'			{ $$ = new Procedure($2, $4); }
@@ -199,7 +200,7 @@ rvalue				: T_intconst		{ $$ = new Intconst($1); }
 				| '(' rvalue ')'	{ $$ = $2; }
 				| "nil"			{ $$ = new Nil(); }
 				| call			{ $$ = $1; }
-				| '@' expr		{ $$ = new Op($1, $2); }
+				| '@' expr		{ $$ = new UnOp($1, $2); }
 			        | "not" expr   		{ $$ = new UnOp($1, $2); }
 			        | '+' expr   		{ $$ = new UnOp($1, $2); }
 			        | '-' expr   		{ $$ = new UnOp($1, $2); }

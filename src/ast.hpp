@@ -57,6 +57,58 @@ public:
   virtual void run() const = 0;
 };
 
+class Block: public Stmt {
+private:
+  std::vector<Local *> local_list;
+  std::vector<Stmt *> stmt_list;
+  int size;
+public:
+  Block(): local_list(), stmt_list(), size(0) {}
+  ~Block() {
+    for (Local *l : local_list) delete l;
+    for (Stmt *s : stmt_list) delete s;
+  }
+  void append_local(Local *l) { local_list.push_back(l); }
+  void append_stmt(Stmt *s) { stmt_list.push_back(s); }
+  void merge(Block *b) {
+    stmt_list = b->stmt_list;
+    b->stmt_list.clear();
+    delete b;
+  }
+  virtual void printOn(std::ostream &out) const override {
+    out << "Block(";
+    bool first = true;
+    for (Local *l : local_list) {
+      if (!first) out << ", ";
+      first = false;
+      out << *l;
+    }
+    for (Stmt *s : stmt_list) {
+      if (!first) out << ", ";
+      first = false;
+      out << *s;
+    }
+    out << ")";
+  }
+  virtual void sem() override {
+    st.openScope();
+    for (Local *l : local_list) l->sem();
+    for (Stmt *s : stmt_list) s->sem();
+    size = st.getSizeOfCurrentScope();
+    st.closeScope();
+  }
+  virtual void run() const override {
+    for (int i = 0; i < size; ++i) rt_stack.push_back(0);
+    for (Stmt *s : stmt_list) s->run();
+    for (int i = 0; i < size; ++i) rt_stack.pop_back();
+  }
+};
+
+//TODO
+class Local: public Block {
+
+};
+
 
 class Lvalue: public Expr {
 public:
@@ -406,39 +458,6 @@ public:
 };
 
 class UnOp: public Rvalue {
-private:
-  char *op;
-  Expr *right;
-public:
-  UnOp(char *o, Expr *r): op(o), right(r) {}
-  ~UnOp() { delete right; }
-  virtual void printOn(std::ostream &out) const override {
-    out << op << "(" << *right << ")";
-  }
-  virtual void sem() override {
-    if (!std::strcmp(op, "+") || !std::strcmp(op, "-")) {
-      if (right->type_check(TYPE_integer)) {
-        type->kind = TYPE_integer;
-      }
-      else if (right->type_check(TYPE_real) ) {
-        type->kind = TYPE_real;
-      }
-      else {
-        exit(1);
-      }
-    }
-    else if (!std::strcmp(op, "not")) {
-      if ( right->type_check(TYPE_boolean) ) {
-        type->kind = TYPE_boolean;
-      }
-      else {
-        exit(1);
-      }
-    }
-    else {
-      exit(1);  // Unreachable
-    }
-  }
   virtual Value eval() const override {
     Value value;
     if (!std::strcmp(op, "+")) {
@@ -449,7 +468,7 @@ public:
         value.real_value = right->eval().real_value;
       }
     }
-    if (!std::strcmp(op, "-")) {
+    else if (!std::strcmp(op, "-")) {
       if (right->type_check(TYPE_integer)) {
         value.integer_value = (-1)*right->eval().integer_value;
       }
@@ -457,8 +476,11 @@ public:
         value.real_value = (-1)*right->eval().real_value;
       }
     }
-    if (!std::strcmp(op, "not")) {
+    else if (!std::strcmp(op, "not")) {
       value.boolean_value = !right->eval().boolean_value;
+    }
+    else if (!std::strcmp(op, "@"){
+      value.pointer_value = &right
     }
     return value;
   }
@@ -625,12 +647,8 @@ public:
 
 // class Call: public Stmt {};
 //
-// class Block: public Stmt {local_list}; ?? λογω body
-//
 // class Assignment: public Stmt {};
 //
 // class Expr_list: public Call {};
 //
-// class Stmt_list: public Block {};
-//
-// block, type, formal, formal_list, header, var_name_list, var_name_type_list, local, body, program
+// type, formal, formal_list, header
