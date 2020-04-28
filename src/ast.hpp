@@ -57,7 +57,7 @@ public:
   virtual void run() const = 0;
 };
 
-class Block: public Stmt {
+class Block: public AST {
 private:
   std::vector<Local *> local_list;
   std::vector<Stmt *> stmt_list;
@@ -127,13 +127,6 @@ public:
   }
 };
 
-// class Pointer: public Lvalue {};
-//
-// class Array: public Lvalue {};
-//
-// class Stringconst: public Lvalue {};
-//
-// class Result: public Lvalue {};
 
 //pif
 class Id: public Lvalue {
@@ -141,7 +134,7 @@ private:
   string var;
 public:
   Id(string v): var(v) {
-    
+
   }
   void set_type(Type t) {
     type->kind = t;
@@ -579,20 +572,6 @@ public:
   virtual void sem() override { type->kind=TYPE_integer; }
 };
 
-// class Dispose1: public Stmt {};
-//
-// class Dispose: public Stmt {};
-//
-// class New1: public Stmt {};
-//
-// class New: public Stmt {};
-//
-// class Return: public Stmt {};
-//
-// class Goto: public Stmt {};
-//
-// class Label1: public Stmt {};
-
 
 //pif
 class While: public Stmt {
@@ -652,10 +631,29 @@ public:
   }
 };
 
-// class Call: public Stmt {};
+//TODO
+class Call: public Stmt {
+  // find id in symbol table
+};
 //
 // class Assignment: public Stmt {};
 //
-// class Expr_list: public Call {};
+// formal, header
 //
-// type, formal, formal_list, header
+// class Pointer: public Lvalue {};
+//
+// class Array: public Lvalue {};
+//
+// class Stringconst: public Lvalue {};
+//
+// class Result: public Lvalue {};
+//
+// class Dispose: public Stmt {};
+//
+// class New: public Stmt {};
+//
+// class Return: public Stmt {};
+//
+// class Goto: public Stmt {};
+//
+// class Label: public Stmt {};

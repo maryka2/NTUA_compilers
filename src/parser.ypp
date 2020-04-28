@@ -63,6 +63,7 @@ std::unordered_map<string, SymbolEntry*> globals;  // Global hash table
 %union{
 	int i;
 	double f;
+	char c;
 	char str[80];
 	bool b;
 	Type type;
@@ -74,30 +75,32 @@ std::unordered_map<string, SymbolEntry*> globals;  // Global hash table
 	Formal *formal;
 	Block *block;
 	Stmt *stmt
-	Var_ntl *var_name_type_list;
-	Formal_l *formal_list;
-	Expr_l *expr_list;
+	std::vector<Id*> var_name_type_list;
+	std::vector<Formal*> formal_list;
+	std::vector<Expr*> expr_list;
 	UnOp *unop;
 	BinOp *binop;
 	char op[3];
+	Id *id;
+	Local *local;
 }
 
-%token<str> T_id
 %token<i> T_intconst
 %token<f> T_realconst
-%token<str> T_charconst
+%token<c> T_charconst
 %token<str> T_stringconst
 
-%type<expr>  expr
-%type<lvalue>  lvalue
-%type<rvalue>  rvalue
-%type<call>  call
-%type<str> var_name_list
+%type<id> T_id
+%type<expr> expr
+%type<lvalue> lvalue
+%type<rvalue> rvalue
+%type<call> call
 %type<header> header
 %type<formal> formal
-%type<block> block body local_list program stmt_list  local
+%type<block> block body local_list program stmt_list
+%type<local> local
 %type<stmt> stmt
-%type<var_name_type_list> var_name_type_list
+%type<var_name_type_list> var_name_type_list var_name_list
 %type<formal_list> formal_list
 %type<expr_list> expr_list
 %type<type> type
@@ -185,22 +188,21 @@ stmt				: /*nothing*/				{ $$ = new Stmt(); }
 				| "goto" T_id				{ $$ = new Goto($2); }
 				| "return"				{ $$ = new Return(); }
 				| "new" lvalue				{ $$ = new New($2); }
-				| "new" '[' expr ']' lvalue		{ $$ = new New1($3, $5); }
+				| "new" '[' expr ']' lvalue		{ $$ = new New($3, $5); }
 				| "dispose" lvalue			{ $$ = new Dispose($2); }
 				| "dispose" '[' ']' lvalue		{ $$ = new Dispose($4); }
 				;
 
-				//----------------------------------------------------------------
-
 
 
 lvalue				: T_id			{ $$ = new Id($1); }
-				| "result"		{ $$ = new Result(); }
+				| "result"		{ $$ = new Id($1); }
 				| T_stringconst		{ $$ = new Stringconst($1); }
 				| lvalue '[' expr ']'	{ $$ = new Array($1, $3); }
 				| expr '^'		{ $$ = new Pointer($1); }
 				| '(' lvalue ')'	{ $$ = $2; }
 				;
+
 
 rvalue				: T_intconst		{ $$ = new Intconst($1); }
 				| "true"		{ $$ = new Bool("true"); }
@@ -232,7 +234,6 @@ rvalue				: T_intconst		{ $$ = new Intconst($1); }
 
 
 
-
 expr				: lvalue		{ $$ = $1; }
 				| rvalue		{ $$ = $1; }
 				;
@@ -242,8 +243,8 @@ call				: T_id '(' ')'			{ $$ = new Call($1); }
 				| T_id '(' expr_list ')'	{ $$ = new Call($1, $3); }
 				;
 
-expr_list			: expr			{ $$ = $1; }
-				|  expr_list ',' expr	{ $1->append_expr($3); $$ = $1; }
+expr_list			: expr		{ std::vector<Expr*> v; v.push_back($1); $$ = v; }
+				|  expr_list ',' expr	{ $1.push_back($3); $$ = $1; }
 				;
 
 %%
