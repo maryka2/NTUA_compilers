@@ -1,7 +1,7 @@
 #include "type.hpp"
 
 
-Type type_integer ()
+Type type_integer()
 {
    Type result = new(sizeof(struct Type_tag));
 
@@ -9,7 +9,7 @@ Type type_integer ()
    return result;
 }
 
-Type type_real ()
+Type type_real()
 {
    Type result = new(sizeof(struct Type_tag));
 
@@ -17,7 +17,7 @@ Type type_real ()
    return result;
 }
 
-Type type_boolean ()
+Type type_boolean()
 {
    Type result = new(sizeof(struct Type_tag));
 
@@ -25,7 +25,7 @@ Type type_boolean ()
    return result;
 }
 
-Type type_char ()
+Type type_char()
 {
    Type result = new(sizeof(struct Type_tag));
 
@@ -33,7 +33,7 @@ Type type_char ()
    return result;
 }
 
-Type type_arrayI (int dim, Type type)
+Type type_arrayI(int dim, Type type)
 {
    Type result = new(sizeof(struct Type_tag));
 
@@ -43,7 +43,7 @@ Type type_arrayI (int dim, Type type)
    return result;
 }
 
-Type type_arrayII (Type type)
+Type type_arrayII(Type type)
 {
    Type result = new(sizeof(struct Type_tag));
 
@@ -52,7 +52,7 @@ Type type_arrayII (Type type)
    return result;
 }
 
-Type type_pointer (Type type)
+Type type_pointer(Type type)
 {
    Type result = new(sizeof(struct Type_tag));
 
@@ -61,10 +61,37 @@ Type type_pointer (Type type)
    return result;
 }
 
-Type type_string ()
+Type type_string()
 {
    Type result = new(sizeof(struct Type_tag));
 
    result->kind = TYPE_string;
+   return result;
+}
+
+Type type_label()
+{
+   Type result = new(sizeof(struct Type_tag));
+
+   result->kind = TYPE_label;
+   return result;
+}
+
+Type type_function(std::vector<Type> arg_types, Type result_type)
+{
+   Type result = new(sizeof(struct Type_tag));
+
+   result->kind = TYPE_label;
+   result->arg_types = arg_types;
+   result->result_type = result_type;
+   return result;
+}
+
+Type type_procedure(std::vector<Type> arg_types)
+{
+   Type result = new(sizeof(struct Type_tag));
+
+   result->kind = TYPE_label;
+   result->arg_types = arg_types;
    return result;
 }

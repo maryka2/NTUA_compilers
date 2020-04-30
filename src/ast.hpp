@@ -57,6 +57,41 @@ public:
   virtual void run() const = 0;
 };
 
+
+class Header: public AST {
+  private:
+    int header_type;
+    string name;
+    std::vector<Formal*> formal_list;
+    Type result_type;
+  public:
+    // Procedure
+    Header(string n, std::vector<Formal*> fl) {
+      header_type = 0;
+      name = n;
+      formal_list = fl;
+    }
+    // Function
+    Header(string n, std::vector<Formal*> fl, Type rt) {
+      header_type = 1;
+      name = n;
+      formal_list = fl;
+      result_type = rt;
+    }
+    // Procedure
+    Header(string n) {
+      header_type = 0;
+      name = n;
+    }
+    // Function
+    Header(string n, Type rt) {
+      header_type = 1;
+      name = n;
+      result_type = rt;
+    }
+}
+
+
 class Block: public AST {
 private:
   std::vector<Local *> local_list;
@@ -104,9 +139,54 @@ public:
   }
 };
 
-//TODO
-class Local: public Block {
 
+class Local: public Block {
+private:
+  int local_type;
+  string local_type_str;
+  std::vector<Id*> name_list;
+  Header *header;
+  Block *body;
+public:
+  Local(string lts, std::vector<Id*> nl) {
+    local_type = 0;
+    local_type_str = lts;
+    name_list = nl;
+  }
+  Local(Header *h, Block *b) {
+    local_type = 1;
+    header = h;
+    body = b;
+  }
+  Local(Header *h) {
+    local_type = 2;
+    header = h;
+  }
+  
+  virtual void sem() override {
+    if (local_type == 0) {
+      if (local_type_str == "var") {
+        for (Id* id : name_list) {
+          id->insertIntoCurrentScope();
+        }
+      }
+      else if (local_type_str == "label") {
+        for (Id* id : name_list) {
+          id->set_type(type_label());
+          id->insertIntoCurrentScope();
+        }
+      }
+      else {
+        exit(1);
+      }
+    }
+    else {
+      header->sem();
+      if (local_type == 1) {
+        body->sem();
+      }
+    }
+  }
 };
 
 
@@ -138,6 +218,9 @@ public:
   }
   void set_type(Type t) {
     type->kind = t;
+  }
+  void insertIntoCurrentScope() {
+    st.insert(var, type);
   }
   virtual void printOn(std::ostream &out) const override {
     out << "Id(" << var << ")";
@@ -589,7 +672,7 @@ public:
       stmt->sem();
     }
     else{
- 	exit(1);
+      exit(1);
     }
   }
   virtual void run() const override {

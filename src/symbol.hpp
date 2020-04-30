@@ -67,6 +67,9 @@ public:
     else n = globals[c];  // else point to it
     globals[c] = scopes.back().insert(c, t, n); // Insert SymbolEntry to top Scope
   }
+  int getSizeOfCurrentScope() {
+    return scopes.back().locals.size();
+  }
 private:
   std::vector<Scope> scopes;  // The data stack
 };
