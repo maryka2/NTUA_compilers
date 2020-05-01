@@ -60,36 +60,108 @@ public:
 
 class Header: public AST {
   private:
-    int header_type;
+    Type header_type;
     string name;
-    std::vector<Formal*> formal_list;
-    Type result_type;
+    std::vector<Formal *> formal_list;
   public:
     // Procedure
     Header(string n, std::vector<Formal*> fl) {
-      header_type = 0;
+      header_type = type_procedure(false);
+      for (Formal *f: fl){
+        header_type->u.t_procedure.arg_types.push_back(fl->get_formal_type());
+        header_type->u.t_procedure.is_by_ref_arr.push_back(fl->get_is_by_ref());
+      }
       name = n;
       formal_list = fl;
     }
     // Function
     Header(string n, std::vector<Formal*> fl, Type rt) {
-      header_type = 1;
+      header_type = type_function(rt, false);
+      for (Formal *f: fl){
+        header_type->u.t_function.arg_types.push_back(fl->get_formal_type());
+        header_type->u.t_function.is_by_ref_arr.push_back(fl->get_is_by_ref());
+      }
       name = n;
       formal_list = fl;
-      result_type = rt;
     }
     // Procedure
     Header(string n) {
-      header_type = 0;
+      header_type = type_procedure(false);
       name = n;
+      formal_list = fl;
     }
     // Function
     Header(string n, Type rt) {
-      header_type = 1;
+      header_type = type_function(rt, false);
       name = n;
-      result_type = rt;
+      formal_list = fl;
     }
-}
+    ~Header() {
+      for (Formal *f : formal_list) delete f;
+      formal_list.clear();
+      delete header_type;
+    }
+    void printOn(std::ostream &out){
+      if (header_type->kind==TYPE_procedure){
+        out << "Procedure " << name ;
+      }
+      else if (header_type->kind==TYPE_function){
+        out << "Function" << name << ", result type: ";
+        print_type(header_type->u.t_function.result_type);
+      }
+      if (!formal_list.empty()){
+        out << "With arguments "  ;
+      }
+      for (Formal *f : formal_list){
+        out << f->printOn() << " ";
+      }
+    void set_forward(){
+      if (header_type->kind == TYPE_function){
+        header_type->u.t_function.is_forward = true;
+      }
+      else {
+        header_type->u.t_procedure.is_forward = true;
+      }
+    }
+    void sem() {
+      // first check if in SymbolTable
+      SymbolEntry *e = st.lookup(name);
+      if (e != nullptr){  //already declared
+        if (e->type->kind != header_type->kind) {
+          ERROR("Declared both as function and procedure.");
+          exit(1);
+        }
+        if (header_type->kind == TYPE_procedure && (header_type->u.t_procedure.is_forward || !e->type->u.t_procedure.is_forward)){
+          ERROR("Procedure " + name + " already declared.");
+          exit(1);
+        }
+        if (header_type->kind == TYPE_function && (header_type->u.t_function.is_forward || !e->type->u.t_function.is_forward)){
+          ERROR("Function " + name + " already declared.");
+          exit(1);
+        }
+        if (!equal_types(e->type, header_type)){
+          if (header_type->kind == TYPE_function){
+            ERROR("Function " + name + " differs from forward declaration");
+            exit(1);
+          }
+          else {
+            ERROR("Procedure " + name + " differs from forward declaration");
+            exit(1);
+          }
+        }
+        if (e->type->kind == TYPE_function){
+          e->type->u.t_function.is_forward = false;
+        }
+        else {
+          e->type->u.t_procedure.is_forward = false;
+        }
+      }
+      // not declared, insert
+      else{
+        st.insert(name, header_type);
+      }
+    }
+};
 
 
 class Block: public AST {
@@ -161,8 +233,9 @@ public:
   Local(Header *h) {
     local_type = 2;
     header = h;
+    header->set_forward();
   }
-  
+
   virtual void sem() override {
     if (local_type == 0) {
       if (local_type_str == "var") {
@@ -721,7 +794,7 @@ class Call: public Stmt {
 //
 // class Assignment: public Stmt {};
 //
-// formal, header
+// formal
 //
 // class Pointer: public Lvalue {};
 //

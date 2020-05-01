@@ -35,14 +35,19 @@ struct Type_tag {
         struct {
           std::vector<Type> arg_types;
           Type result_type;
+          bool is_forward;
+          std::vector<bool> is_by_ref;
         } t_function;
         struct {
           std::vector<Type> arg_types;
+          bool is_forward;
+          std::vector<bool> is_by_ref_arr;
         } t_procedure;
     } u;
 };
 
-
+bool equal_types(Type t1, Type t2);
+void print_type (Type t);
 Type type_integer ();
 Type type_real ();
 Type type_boolean ();
@@ -52,5 +57,5 @@ Type type_arrayII (Type type);
 Type type_pointer (Type type);
 Type type_string ();
 Type type_label ();
-Type type_function (std::vector<Type> arg_types, Type result_type);
-Type type_procedure (std::vector<Type> arg_types);
+Type type_function (Type result_type, bool is_forward);
+Type type_procedure (bool is_forward);

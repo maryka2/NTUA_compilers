@@ -57,7 +57,7 @@ public:
   };
   SymbolEntry *lookup(string c) {
      if (globals.find(c) == globals.end()) {
-      return null;
+      return nullptr;
      }
       return globals[c];  // If variable exists return pointer to its SymbolEntry
   }
