@@ -110,11 +110,12 @@ class Header: public AST {
         print_type(header_type->u.t_function.result_type);
       }
       if (!formal_list.empty()){
-        out << "With arguments "  ;
+        out << " with arguments "  ;
       }
       for (Formal *f : formal_list){
         out << f->printOn() << " ";
       }
+    }
     void set_forward(){
       if (header_type->kind == TYPE_function){
         header_type->u.t_function.is_forward = true;
@@ -159,6 +160,11 @@ class Header: public AST {
       // not declared, insert
       else{
         st.insert(name, header_type);
+      }
+      if ((header_type->kind == TYPE_procedure && header_type->u.t_procedure.is_forward) || (header_type->kind == TYPE_function && header_type->u.t_function.is_forward)) {
+        for (Formal* f: formal_list) {
+          f->sem();
+        }
       }
     }
 };
@@ -212,6 +218,50 @@ public:
 };
 
 
+class Formal: public AST {
+  private:
+    std::vector<Id*> var_name_list;
+    Type type;
+    bool is_by_ref;
+  public:
+    Formal(string var_str, std::vector<Id*> vnl, Type t) {
+      var_name_list = vnl;
+      type = t;
+      is_by_ref = true;
+    }
+    Formal(std::vector<Id*> vnl, Type t) {
+      var_name_list = vnl;
+      type = t;
+      is_by_ref = false;
+    }
+    ~Formal() {
+      for (Id* id: var_name_list) {
+        delete id;
+      }
+      var_name_list.clear();
+      delete type;
+    }
+    void printOn(std::ostream &out) {
+      out << "Formal ";
+      for (Id* id: var_name_list) {
+        id->printOn();
+      }
+      print_type(type);
+    }
+    Type get_formal_type() {
+      return type;
+    }
+    bool get_is_by_ref() {
+      return is_by_ref;
+    }
+    void sem() {
+      for (Id* id: var_name_list) {
+        id->insertIntoCurrentScope();
+      }
+    }
+}
+
+
 class Local: public Block {
 private:
   int local_type;
@@ -254,10 +304,12 @@ public:
       }
     }
     else {
+      st.openScope();
       header->sem();
       if (local_type == 1) {
         body->sem();
       }
+      st.closeScope();
     }
   }
 };
@@ -269,6 +321,7 @@ public:
     exit(1);
   }
 };
+
 
 class Rvalue: public Expr {
 protected:
@@ -755,6 +808,7 @@ public:
   }
 };
 
+
 //pif
 class If: public Stmt {
 private:
@@ -787,14 +841,81 @@ public:
   }
 };
 
-//TODO
+
 class Call: public Stmt {
-  // find id in symbol table
+  private:
+    string name;
+    std::vector<Expr*> expr_list;
+  public:
+    Call(string n) {
+      name = n;
+    }
+    Call(string n, std::vector<Expr*> el) {
+      name = n;
+      expr_list = el;
+    }
+    ~Call() {
+      for (Expr *r : expr_list) delete e;
+      expr_list.clear();
+    }
+    void printOn(std::ostream &out){
+      out << "Call of procedure or function '" << name << "'";
+      if (!expr_list.empty()){
+        out << " with arguments ";
+      }
+      for (Expr *expr : expr_list){
+        expr->printOn();
+        out << " ";
+      }
+    }
+    void sem() {
+      // first check if in SymbolTable
+      Symbolentry *e = st.lookup(name);
+      if (e == nullptr) {
+        ERROR("Called function or procedure '" + name + "' was not defined.");
+        exit(1);
+      }
+      if (e->type->kind == TYPE_procedure){
+        if (e->type->u.t_procedure.is_forward) {
+          ERROR("Called procedure '" + name + "' has only been forward declared.");
+          exit(1);
+        }
+        if (expr_list.size() != e->type->u.t_procedure.arg_types.size()) {
+          ERROR("Different amount of arguments given for procedure '" + name + "'.");
+          exit(1);
+        }
+        for (int arg_idx = 0; arg_idx < expr_list.size(); ++arg_idx) {
+          if (!equal_types(expr_list[arg_idx]->type, e->type->u.t_procedure.arg_types[arg_idx])) {
+            ERROR("Not right type of argument in call of procedure '" + name + "'.");
+            exit(1);
+          }
+        }
+      }
+      else if (e->type->kind == TYPE_function){
+        if (e->type->u.t_function.is_forward) {
+          ERROR("Called function '" + name + "' has only been forward declared.");
+          exit(1);
+        }
+        if (expr_list.size() != e->type->u.t_function.arg_types.size()) {
+          ERROR("Different amount of arguments given for function '" + name + "'.");
+          exit(1);
+        }
+        for (int arg_idx = 0; arg_idx < expr_list.size(); ++arg_idx) {
+          if (!equal_types(expr_list[arg_idx]->type, e->type->u.t_function.arg_types[arg_idx])) {
+            ERROR("Not right type of argument in call of function '" + name + "'.");
+            exit(1);
+          }
+        }
+      }
+      else {
+        ERROR("Call of '" + name + "' with type different than function or procedure.");
+        exit(1);
+      }
+    }
 };
+
 //
 // class Assignment: public Stmt {};
-//
-// formal
 //
 // class Pointer: public Lvalue {};
 //
