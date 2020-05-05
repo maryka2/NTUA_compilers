@@ -12,7 +12,6 @@ union Value {
   void *arrayI_value;
   void *arrayII_value;
   void *pointer_value;
-  char *string_value;
 };
 
 // SymbolEntry is a small box in the data stack

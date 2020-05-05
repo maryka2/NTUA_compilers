@@ -10,7 +10,6 @@ enum myType{
       TYPE_arrayI,
       TYPE_arrayII,
       TYPE_pointer,
-      TYPE_string,
       TYPE_label,
       TYPE_function,
       TYPE_procedure
@@ -46,16 +45,17 @@ struct Type_tag {
     } u;
 };
 
+bool equal_strings(Type t1, Type t2, Value v1, Value v2);
+bool is_string(Type t);
 bool equal_types(Type t1, Type t2);
-void print_type (Type t);
-Type type_integer ();
-Type type_real ();
-Type type_boolean ();
-Type type_char ();
-Type type_arrayI (int dim, Type type);
-Type type_arrayII (Type type);
-Type type_pointer (Type type);
-Type type_string ();
-Type type_label ();
-Type type_function (Type result_type, bool is_forward);
-Type type_procedure (bool is_forward);
+void print_type(Type t);
+Type type_integer();
+Type type_real();
+Type type_boolean();
+Type type_char();
+Type type_arrayI(int dim, Type type);
+Type type_arrayII(Type type);
+Type type_pointer(Type type);
+Type type_label();
+Type type_function(Type result_type, bool is_forward);
+Type type_procedure(bool is_forward);

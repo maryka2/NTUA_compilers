@@ -1,5 +1,21 @@
 #include "type.hpp"
 
+bool equal_strings(Type t1, Type t2, Value v1, Value v2){
+  if (t1->u.t_arrayI.dim != t1->u.t_arrayI.dim){
+    return false;
+  }
+  for (int index = 0; index < t1->u.t_arrayI.dim; index++){
+    if (((char *)v1.arrayI_value)[index] != ((char *)v2.arrayI_value)[index]){
+      return false;
+    }
+  }
+  return true;
+}
+
+bool is_string(Type t){
+  return (t->kind == TYPE_arrayI && t->u.t_arrayI.type->kind == TYPE_char);
+}
+
 void print_type(Type t){
   switch (t->kind) {
     case TYPE_integer:
@@ -25,9 +41,6 @@ void print_type(Type t){
     case TYPE_pointer:
       out << "pointer with type ";
       print_type(t->u.t_pointer.type);
-      break;
-    case TYPE_string:
-      out << "string"
       break;
     case TYPE_label:
       out << "label"
@@ -152,14 +165,6 @@ Type type_pointer(Type type)
 
    result->kind = TYPE_pointer;
    result->u.t_pointer.type = type;
-   return result;
-}
-
-Type type_string()
-{
-   Type result = new(sizeof(struct Type_tag));
-
-   result->kind = TYPE_string;
    return result;
 }
 

@@ -18,7 +18,6 @@ inline std::ostream& operator<<(std::ostream &out, Type t) {
     case TYPE_arrayI: out << "arrayI"; break;
     case TYPE_arrayII: out << "arrayII"; break;
     case TYPE_pointer: out << "pointer"; break;
-    case TYPE_string: out << "string"; break;
   }
   return out;
 }
@@ -39,15 +38,22 @@ inline std::ostream& operator<<(std::ostream &out, const AST &t) {
 class Expr: public AST {
 protected:
   Type type;
+  bool is_sem_called = false;
 public:
   bool type_check(myType t) {
-    sem();
+    if (!is_sem_called){
+      is_sem_called = true;
+      sem();
+    }
     return (type->kind == t);
   }
   virtual Value eval() const {
     Value value;
     value.integer_value = 0;
     return value;
+  }
+  Type get_expr_type() {
+    return type;
   }
 };
 
@@ -162,6 +168,9 @@ class Header: public AST {
         st.insert(name, header_type);
       }
       if ((header_type->kind == TYPE_procedure && header_type->u.t_procedure.is_forward) || (header_type->kind == TYPE_function && header_type->u.t_function.is_forward)) {
+        if (header_type->kind == TYPE_function){
+          st.insert("result", header_type->u.t_function.result_type);
+        }
         for (Formal* f: formal_list) {
           f->sem();
         }
@@ -259,7 +268,7 @@ class Formal: public AST {
         id->insertIntoCurrentScope();
       }
     }
-}
+};
 
 
 class Local: public Block {
@@ -317,9 +326,7 @@ public:
 
 class Lvalue: public Expr {
 public:
-  virtual Value eval() const override {
-    exit(1);
-  }
+  virtual Value eval() const override {}
 };
 
 
@@ -328,9 +335,7 @@ protected:
   Type type;
 //sem(), type_check(type t)->bool, eval()
 public:
-  virtual Value eval() const override {
-    exit(1);
-  }
+  virtual Value eval() const override {}
 };
 
 
@@ -550,8 +555,8 @@ public:
       if ( left->type_check(TYPE_pointer) ) {
         value.boolean_value = left->eval().pointer_value == right->eval().pointer_value;
       }
-      if ( left->type_check(TYPE_string) ) {
-        value.boolean_value = !std::strcmp(left->eval().string_value, right->eval().string_value);
+      if (is_string(left->type)) {
+        value.boolean_value = !equal_strings(left->type, right->type, left->eval().arrayI_value, right->eval().arrayI_value);
       }
     }
     if (!std::strcmp(op, "<>")) {
@@ -580,8 +585,8 @@ public:
       if ( left->type_check(TYPE_pointer) ) {
         value.boolean_value = left->eval().pointer_value != right->eval().pointer_value;
       }
-      if ( left->type_check(TYPE_string) ) {
-        value.boolean_value = std::strcmp(left->eval().string_value, right->eval().string_value);
+      if ( is_string(left->type) ) {
+        value.boolean_value = equal_strings(left->type, right->type, left->eval().arrayI_value, right->eval().arrayI_value);
       }
     }
     if (!std::strcmp(op, "or")) {
@@ -914,23 +919,124 @@ class Call: public Stmt {
     }
 };
 
-//
-// class Assignment: public Stmt {};
-//
-// class Pointer: public Lvalue {};
-//
-// class Array: public Lvalue {};
-//
-// class Stringconst: public Lvalue {};
-//
-// class Result: public Lvalue {};
-//
-// class Dispose: public Stmt {};
-//
+class Assignment: public Stmt {
+private:
+  Lvalue *lvalue;
+  Expr *expr;
+public:
+  Assignment(Lvalue *lv, Expr *e){
+    lvalue = lv;
+    expr = e;
+  }
+  ~Assignment(){
+    delete lvalue;
+    delete expr;
+  }
+  void printOn(std::ostream &out){
+    out << "Assignment ";
+    lvalue->printOn();
+    out << " = ";
+    expr->printOn();
+  }
+  void sem(){
+    Type lvalue_type = lvalue->get_expr_type();
+    Type expr_type = expr->get_expr_type();
+    if (!equal_types(lvalue_type, expr_type)
+    && !(lvalue_type->kind == TYPE_integer && expr_type->kind == TYPE_real)
+    && !(lvalue_type->kind == TYPE_arrayI && expr_type->kind == TYPE_arrayII && equal_types(lvalue_type->u.t_arrayI.type, expr_type->u.t_arrayII.type))
+    && !(lvalue_type->kind == TYPE_real && expr_type->kind == TYPE_integer)
+    && !(lvalue_type->kind == TYPE_arrayII && expr_type->kind == TYPE_arrayI && equal_types(lvalue_type->u.t_arrayII.type, expr_type->u.t_arrayI.type))){
+      ERROR("Assignement of wrong type.");
+      exit(1);
+    }
+  }
+};
+
+class Dereference: public Lvalue {
+private:
+  Expr *expr;
+public:
+  Dereference(Expr *e){
+    expr = e;
+  }
+  ~Dereference(){
+    delete expr;
+  }
+  void printOn(std::ostream &out){
+    out << "Dereference ";
+    expr->printOn();
+  }
+  void sem(){
+    if (!expr->type_check(TYPE_pointer)){
+      ERROR ("Attempt of dereferencing non-pointer expression");
+      exit(1);
+    }
+    type = expr->type->u.t_pointer.type;
+  }
+};
+
+class Array: public Lvalue {
+private:
+  Lvalue *lvalue;
+  Expr *expr;
+public:
+  Array(Lvalue *lv, Expr *e){
+    lvalue = lv;
+    expr = e;
+  }
+  ~Array(){
+    delete lvalue;
+    delete expr;
+  }
+  void printOn(std::ostream &out){
+    out << "Array ";
+    lvalue->printOn();
+    out << " [";
+    expr->printOn();
+    out << "].";
+  }
+  void sem(){
+    if (!expr->type_check(TYPE_integer)){
+      ERROR("Non-integer value used for array indexing.");
+      exit(1);
+    }
+    if (lvalue->type_check(TYPE_arrayI)){
+      type = lvalue->type->u.t_arrayI.type;
+    }
+    else if (lvalue->type_check(TYPE_arrayII)){
+      type = lvalue->type->u.t_arrayII.type;
+    }
+    else {
+      ERROR("Indexing non-array lvalue.");
+      exit(1);
+    }
+  }
+};
+
+class Stringconst: public Lvalue {
+private:
+  string str;
+public:
+  Stringconst(string s){
+    str = s;
+  }
+  ~Stringconst(){
+    // this is intentionally left empty
+  }
+  void printOn(std::ostream &out){
+    out << "Stringconst " << str;
+  }
+  void sem(){
+    type = type_arrayI(str.length() + 1, type_char());
+  }
+};
+
 // class New: public Stmt {};
-//
+
+// class Dispose: public Stmt {};
+
 // class Return: public Stmt {};
-//
+
 // class Goto: public Stmt {};
-//
+
 // class Label: public Stmt {};
