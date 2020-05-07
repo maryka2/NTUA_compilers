@@ -42,6 +42,10 @@ struct Type_tag {
           bool is_forward;
           std::vector<bool> is_by_ref_arr;
         } t_procedure;
+        struct {
+          bool is_defined;  // Used next to statement
+          bool is_called;  // Has been called by goto
+        } t_label;
     } u;
 };
 

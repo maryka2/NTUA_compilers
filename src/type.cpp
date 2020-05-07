@@ -43,7 +43,19 @@ void print_type(Type t){
       print_type(t->u.t_pointer.type);
       break;
     case TYPE_label:
-      out << "label"
+      out << "label";
+      if (t->u.t_label.is_defined) {
+        out << " used";
+      }
+      else {
+        out << " unused";
+      }
+      if (t->u.t_label.is_called) {
+        out << " and has been called";
+      }
+      else {
+        out << " and has not been called";
+      }
       break;
     case TYPE_function:
       if (t->u.t_function.is_forward){
@@ -173,6 +185,8 @@ Type type_label()
    Type result = new(sizeof(struct Type_tag));
 
    result->kind = TYPE_label;
+   result->u.t_label.is_defined = false;
+   result->u.t_label.is_called = false;
    return result;
 }
 

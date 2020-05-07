@@ -199,8 +199,8 @@ stmt				: /*nothing*/				{ $$ = new Stmt(); }
 				| "return"				{ $$ = new Return(); }
 				| "new" lvalue				{ $$ = new New($2); }
 				| "new" '[' expr ']' lvalue		{ $$ = new New($3, $5); }
-				| "dispose" lvalue			{ $$ = new Dispose($2); }
-				| "dispose" '[' ']' lvalue		{ $$ = new Dispose($4); }
+				| "dispose" lvalue			{ $$ = new Dispose("pointer", $2); }
+				| "dispose" '[' ']' lvalue		{ $$ = new Dispose("array_pointer", $4); }
 				;
 
 

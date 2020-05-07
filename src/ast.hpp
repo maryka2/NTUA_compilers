@@ -34,7 +34,6 @@ inline std::ostream& operator<<(std::ostream &out, const AST &t) {
   return out;
 }
 
-
 class Expr: public AST {
 protected:
   Type type;
@@ -107,7 +106,7 @@ class Header: public AST {
       formal_list.clear();
       delete header_type;
     }
-    void printOn(std::ostream &out){
+    void printOn(std::ostream &out) const override{
       if (header_type->kind==TYPE_procedure){
         out << "Procedure " << name ;
       }
@@ -119,7 +118,7 @@ class Header: public AST {
         out << " with arguments "  ;
       }
       for (Formal *f : formal_list){
-        out << f->printOn() << " ";
+        out << *f << " ";
       }
     }
     void set_forward(){
@@ -130,7 +129,7 @@ class Header: public AST {
         header_type->u.t_procedure.is_forward = true;
       }
     }
-    void sem() {
+    void sem() override {
       // first check if in SymbolTable
       SymbolEntry *e = st.lookup(name);
       if (e != nullptr){  //already declared
@@ -250,10 +249,10 @@ class Formal: public AST {
       var_name_list.clear();
       delete type;
     }
-    void printOn(std::ostream &out) {
+    void printOn(std::ostream &out) const override {
       out << "Formal ";
       for (Id* id: var_name_list) {
-        id->printOn();
+        out << *id << ' ';
       }
       print_type(type);
     }
@@ -263,7 +262,7 @@ class Formal: public AST {
     bool get_is_by_ref() {
       return is_by_ref;
     }
-    void sem() {
+    void sem() override {
       for (Id* id: var_name_list) {
         id->insertIntoCurrentScope();
       }
@@ -366,6 +365,7 @@ public:
     }
   }
 };
+
 
 class BinOp: public Rvalue {
 private:
@@ -671,6 +671,7 @@ public:
   }
 };
 
+
 class UnOp: public Rvalue {
   virtual Value eval() const override {
     Value value;
@@ -863,17 +864,16 @@ class Call: public Stmt {
       for (Expr *r : expr_list) delete e;
       expr_list.clear();
     }
-    void printOn(std::ostream &out){
+    void printOn(std::ostream &out) const override{
       out << "Call of procedure or function '" << name << "'";
       if (!expr_list.empty()){
         out << " with arguments ";
       }
       for (Expr *expr : expr_list){
-        expr->printOn();
-        out << " ";
+        out << *expr << ' ';
       }
     }
-    void sem() {
+    void sem() override {
       // first check if in SymbolTable
       Symbolentry *e = st.lookup(name);
       if (e == nullptr) {
@@ -919,6 +919,7 @@ class Call: public Stmt {
     }
 };
 
+
 class Assignment: public Stmt {
 private:
   Lvalue *lvalue;
@@ -932,13 +933,10 @@ public:
     delete lvalue;
     delete expr;
   }
-  void printOn(std::ostream &out){
-    out << "Assignment ";
-    lvalue->printOn();
-    out << " = ";
-    expr->printOn();
+  void printOn(std::ostream &out) const override {
+    out << "Assignment " << *lvalue << " = " << *expr;
   }
-  void sem(){
+  void sem() override{
     Type lvalue_type = lvalue->get_expr_type();
     Type expr_type = expr->get_expr_type();
     if (!equal_types(lvalue_type, expr_type)
@@ -952,6 +950,7 @@ public:
   }
 };
 
+
 class Dereference: public Lvalue {
 private:
   Expr *expr;
@@ -962,11 +961,10 @@ public:
   ~Dereference(){
     delete expr;
   }
-  void printOn(std::ostream &out){
-    out << "Dereference ";
-    expr->printOn();
+  void printOn(std::ostream &out) const override {
+    out << "Dereference " << *expr;
   }
-  void sem(){
+  void sem() override {
     if (!expr->type_check(TYPE_pointer)){
       ERROR ("Attempt of dereferencing non-pointer expression");
       exit(1);
@@ -974,6 +972,7 @@ public:
     type = expr->type->u.t_pointer.type;
   }
 };
+
 
 class Array: public Lvalue {
 private:
@@ -988,14 +987,10 @@ public:
     delete lvalue;
     delete expr;
   }
-  void printOn(std::ostream &out){
-    out << "Array ";
-    lvalue->printOn();
-    out << " [";
-    expr->printOn();
-    out << "].";
+  void printOn(std::ostream &out) const override {
+    out << "Array " << *lvalue << " [" << *expr << "]";
   }
-  void sem(){
+  void sem() override {
     if (!expr->type_check(TYPE_integer)){
       ERROR("Non-integer value used for array indexing.");
       exit(1);
@@ -1013,6 +1008,7 @@ public:
   }
 };
 
+
 class Stringconst: public Lvalue {
 private:
   string str;
@@ -1023,20 +1019,171 @@ public:
   ~Stringconst(){
     // this is intentionally left empty
   }
-  void printOn(std::ostream &out){
+  void printOn(std::ostream &out) const override {
     out << "Stringconst " << str;
   }
-  void sem(){
+  void sem() override {
     type = type_arrayI(str.length() + 1, type_char());
   }
 };
 
-// class New: public Stmt {};
 
-// class Dispose: public Stmt {};
+class Label: public Stmt {
+private:
+  string label_name;
+  Stmt *stmt;
+public:
+  Label(string ln, Stmt *s) {
+    label_name = ln;
+    stmt = s;
+  }
+  ~Label() {
+    delete stmt;
+  }
+  void printOn(std::ostream &out) const override {
+    out << "Label '" << label_name << "' with statement ";
+    stmt->printOn(out);
+  }
+  void sem() override {
+    SymbolEntry *e = st.lookup(label_name);
+    if (e == nullptr || e->type->kind != TYPE_label) {
+      ERROR(label_name + " is not a label in this scope.");
+      exit(1);
+    }
+    if (e->type->u.t_label.is_used) {
+      ERROR("Label " + label_name + " already used.");
+      exit(1);
+    }
+    e->type->u.t_label.is_used = true;
+  }
+};
 
-// class Return: public Stmt {};
 
-// class Goto: public Stmt {};
+class Goto: public Stmt {
+private:
+  string label_name;
+public:
+  Goto(string ln) {
+    label_name = ln;
+  }
+  ~Goto() {
+    // this is intentionally left empty
+  }
+  void printOn(std::ostream &out) const override {
+    out << "Goto '" << label_name << "'";
+  }
+  void sem() override {
+    SymbolEntry *e = st.lookup(label_name);
+    if (e == nullptr || e->type->kind != TYPE_label) {
+      ERROR("Label '" + label_name + "' not defined.");
+      exit(1);
+    }
+    e->type->u.t_label.is_called = true;
+  }
+};
 
-// class Label: public Stmt {};
+
+class Return: public Stmt {
+public:
+  Return() {
+    // this is intentionally left empty
+  }
+  ~Return() {
+    // this is intentionally left empty
+  }
+  void printOn(std::ostream &out) const override {
+    out << "Return";
+  }
+  void sem() override {
+    // this is intentionally left empty
+  }
+};
+
+
+class New: public Stmt {
+private:
+  Lvalue *lvalue;
+  Expr *expr;
+  bool is_array;
+public:
+  New(Lvalue *lv) {
+    lvalue = lv;
+    is_array = false;
+  }
+  New(Expr *e, Lvalue *lv) {
+    lvalue = lv;
+    expr = e;
+    is_array = true;
+  }
+  ~New() {
+    delete lvalue;
+    delete expr;
+  }
+  void printOn(std::ostream &out) const override {
+    out << "New";
+    if (is_array) {
+      out << " [" << *expr << "]";
+    }
+    out << " " << *lvalue;
+  }
+  void sem() override {
+    if (!lvalue->type_check(TYPE_pointer)) {
+      ERROR("Attempt of dynamic memory allocation to non-pointer lvalue.");
+      exit(1);
+    }
+    if (is_array) {
+      if (lvalue->get_expr_type()->u.t_pointer.type->kind != TYPE_arrayI) {
+        ERROR("Lvalue of new [] is not an arrayI.");
+        exit(1);
+      }
+      if (expr->get_expr_type()->kind != TYPE_integer) {
+        ERROR("Indexing with non-integer expression.");
+        exit(1);
+      }
+    }
+  }
+};
+
+
+class Dispose: public Stmt {
+private:
+  Lvalue *lvalue;
+  bool is_array;
+public:
+  Dispose(string dispose_type_str, Lvalue *lv) {
+    lvalue = lv;
+    is_array = (dispose_type_str == "array_pointer");
+  }
+  ~Dispose() {
+    delete lvalue;
+  }
+  void printOn(std::ostream &out) const override {
+    out << "Dispose";
+    if (is_array) {
+      out << " []";
+    }
+    out << " " << *lvalue;
+  }
+  void sem() override {
+    if (!lvalue->type_check(TYPE_pointer)) {
+      ERROR("Attempt of dynamic memory deallocation to non-pointer lvalue.");
+      exit(1);
+    }
+    if (is_array && lvalue->get_expr_type()->u.t_pointer.type->kind != TYPE_arrayI) {
+      ERROR("Lvalue of new [] is not an arrayI.");
+      exit(1);
+    }
+  }
+};
+
+
+
+
+
+
+
+
+
+
+
+
