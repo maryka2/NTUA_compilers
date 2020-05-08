@@ -4,7 +4,7 @@
 
 1. Λεκτικός Αναλυτής :heavy_check_mark:
 
-2. Συντακτικός Αναλυτής :clock2:
+2. Συντακτικός Αναλυτής :heavy_check_mark:
 
 3. Πίνακας Συμβόλων :heavy_check_mark:
 
