@@ -108,7 +108,7 @@ std::unordered_map<string, SymbolEntry*> globals;  // Global hash table
 
 %%
 
-program				: "program" T_id ';' body '.'	{ $$ = $4; }
+program				: "program" T_id ';' body '.'	{ $4->sem(); $$ = $4; }
 				;
 
 body				: local_list block	{ $1->merge($2); $$ = $1; }
@@ -190,7 +190,7 @@ stmt_list			: /*nothing*/				{ $$ = new Block(); }
 stmt				: /*nothing*/				{ $$ = new Stmt(); }
 				| lvalue ":=" expr			{ $$ = new Assignment($1, $3); }
 				| block					{ $$ = $1; }
-				| call					{ $$ = $1; }
+				| call					{ $1->is_statement(); $$ = $1; }
 				| "if" expr "then" stmt "else" stmt	{ $$ = new If($2, $4, $6); }
 				| "if" expr "then" stmt			{ $$ = new If($2, $4); }
 				| "while" expr "do" stmt		{ $$ = new While($2, $4); }

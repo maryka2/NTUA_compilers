@@ -35,7 +35,6 @@ public:
     if (locals.find(c) != locals.end()) {  // Check if there is already a variable with name equal to c in this scope
       // If we are here there is already a variable with the name with that name
       ERROR("Duplicate variable " + c);  // Print error message
-      exit(1);  // Exit compiler
     }
     locals[c] = SymbolEntry(t, n);  // Create new variable
     return &(locals[c]);  // Return pointer to the new variable
@@ -53,7 +52,6 @@ public:
       SymbolEntry e = it->second;
       if (e.type->kind == TYPE_label && e.type->u.t_label.is_called && !e.type->u.t_label.is_defined) {
         ERROR("Label '" + it->first + "' used but not defined.");
-        exit(1);
       }
       globals[it->first] = (it->second).next;  // Make the global hash table point the next occurance of this variable name
     }

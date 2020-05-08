@@ -122,7 +122,7 @@ bool equal_types(Type t1, Type t2){
 
 Type type_integer()
 {
-   Type result = new(sizeof(struct Type_tag));
+   Type result = new Type_tag;
 
    result->kind = TYPE_integer;
    return result;
@@ -130,7 +130,7 @@ Type type_integer()
 
 Type type_real()
 {
-   Type result = new(sizeof(struct Type_tag));
+   Type result = new Type_tag;
 
    result->kind = TYPE_real;
    return result;
@@ -138,7 +138,7 @@ Type type_real()
 
 Type type_boolean()
 {
-   Type result = new(sizeof(struct Type_tag));
+   Type result = new Type_tag;
 
    result->kind = TYPE_boolean;
    return result;
@@ -146,7 +146,7 @@ Type type_boolean()
 
 Type type_char()
 {
-   Type result = new(sizeof(struct Type_tag));
+   Type result = new Type_tag;
 
    result->kind = TYPE_char;
    return result;
@@ -154,7 +154,7 @@ Type type_char()
 
 Type type_arrayI(int dim, Type type)
 {
-   Type result = new(sizeof(struct Type_tag));
+   Type result = new Type_tag;
 
    result->kind = TYPE_arrayI;
    result->u.t_arrayI.dim = dim;
@@ -164,7 +164,7 @@ Type type_arrayI(int dim, Type type)
 
 Type type_arrayII(Type type)
 {
-   Type result = new(sizeof(struct Type_tag));
+   Type result = new Type_tag;
 
    result->kind = TYPE_arrayII;
    result->u.t_arrayII.type = type;
@@ -173,7 +173,7 @@ Type type_arrayII(Type type)
 
 Type type_pointer(Type type)
 {
-   Type result = new(sizeof(struct Type_tag));
+   Type result = new Type_tag;
 
    result->kind = TYPE_pointer;
    result->u.t_pointer.type = type;
@@ -182,7 +182,7 @@ Type type_pointer(Type type)
 
 Type type_label()
 {
-   Type result = new(sizeof(struct Type_tag));
+   Type result = new Type_tag;
 
    result->kind = TYPE_label;
    result->u.t_label.is_defined = false;
@@ -192,7 +192,7 @@ Type type_label()
 
 Type type_function(Type result_type, bool is_forward)
 {
-   Type result = new(sizeof(struct Type_tag));
+   Type result = new Type_tag;
 
    result->kind = TYPE_function;
    result->result_type = result_type;
@@ -202,7 +202,7 @@ Type type_function(Type result_type, bool is_forward)
 
 Type type_procedure(bool is_forward)
 {
-   Type result = new(sizeof(struct Type_tag));
+   Type result = new Type_tag;
 
    result->kind = TYPE_procedure;
    result->is_forward = is_forward;

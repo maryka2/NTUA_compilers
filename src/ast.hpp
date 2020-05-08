@@ -7,7 +7,9 @@
 #include "symbol.hpp"
 #include "type.hpp"
 
+
 extern std::unordered_map<string, SymbolEntry*> globals;
+
 
 inline std::ostream& operator<<(std::ostream &out, Type t) {
   switch (t->kind) {
@@ -22,6 +24,7 @@ inline std::ostream& operator<<(std::ostream &out, Type t) {
   return out;
 }
 
+
 class AST {
 public:
   virtual ~AST() {}
@@ -29,153 +32,11 @@ public:
   virtual void sem() {}
 };
 
+
 inline std::ostream& operator<<(std::ostream &out, const AST &t) {
   t.printOn(out);
   return out;
 }
-
-class Expr: public AST {
-protected:
-  Type type;
-  bool is_sem_called = false;
-public:
-  bool type_check(myType t) {
-    if (!is_sem_called){
-      is_sem_called = true;
-      sem();
-    }
-    return (type->kind == t);
-  }
-  virtual Value eval() const {
-    Value value;
-    value.integer_value = 0;
-    return value;
-  }
-  Type get_expr_type() {
-    return type;
-  }
-};
-
-
-class Stmt: public AST {
-public:
-  virtual void run() const = 0;
-};
-
-
-class Header: public AST {
-  private:
-    Type header_type;
-    string name;
-    std::vector<Formal *> formal_list;
-  public:
-    // Procedure
-    Header(string n, std::vector<Formal*> fl) {
-      header_type = type_procedure(false);
-      for (Formal *f: fl){
-        header_type->u.t_procedure.arg_types.push_back(fl->get_formal_type());
-        header_type->u.t_procedure.is_by_ref_arr.push_back(fl->get_is_by_ref());
-      }
-      name = n;
-      formal_list = fl;
-    }
-    // Function
-    Header(string n, std::vector<Formal*> fl, Type rt) {
-      header_type = type_function(rt, false);
-      for (Formal *f: fl){
-        header_type->u.t_function.arg_types.push_back(fl->get_formal_type());
-        header_type->u.t_function.is_by_ref_arr.push_back(fl->get_is_by_ref());
-      }
-      name = n;
-      formal_list = fl;
-    }
-    // Procedure
-    Header(string n) {
-      header_type = type_procedure(false);
-      name = n;
-      formal_list = fl;
-    }
-    // Function
-    Header(string n, Type rt) {
-      header_type = type_function(rt, false);
-      name = n;
-      formal_list = fl;
-    }
-    ~Header() {
-      for (Formal *f : formal_list) delete f;
-      formal_list.clear();
-      delete header_type;
-    }
-    void printOn(std::ostream &out) const override{
-      if (header_type->kind==TYPE_procedure){
-        out << "Procedure " << name ;
-      }
-      else if (header_type->kind==TYPE_function){
-        out << "Function" << name << ", result type: ";
-        print_type(header_type->u.t_function.result_type);
-      }
-      if (!formal_list.empty()){
-        out << " with arguments "  ;
-      }
-      for (Formal *f : formal_list){
-        out << *f << " ";
-      }
-    }
-    void set_forward(){
-      if (header_type->kind == TYPE_function){
-        header_type->u.t_function.is_forward = true;
-      }
-      else {
-        header_type->u.t_procedure.is_forward = true;
-      }
-    }
-    void sem() override {
-      // first check if in SymbolTable
-      SymbolEntry *e = st.lookup(name);
-      if (e != nullptr){  //already declared
-        if (e->type->kind != header_type->kind) {
-          ERROR("Declared both as function and procedure.");
-          exit(1);
-        }
-        if (header_type->kind == TYPE_procedure && (header_type->u.t_procedure.is_forward || !e->type->u.t_procedure.is_forward)){
-          ERROR("Procedure " + name + " already declared.");
-          exit(1);
-        }
-        if (header_type->kind == TYPE_function && (header_type->u.t_function.is_forward || !e->type->u.t_function.is_forward)){
-          ERROR("Function " + name + " already declared.");
-          exit(1);
-        }
-        if (!equal_types(e->type, header_type)){
-          if (header_type->kind == TYPE_function){
-            ERROR("Function " + name + " differs from forward declaration");
-            exit(1);
-          }
-          else {
-            ERROR("Procedure " + name + " differs from forward declaration");
-            exit(1);
-          }
-        }
-        if (e->type->kind == TYPE_function){
-          e->type->u.t_function.is_forward = false;
-        }
-        else {
-          e->type->u.t_procedure.is_forward = false;
-        }
-      }
-      // not declared, insert
-      else{
-        st.insert(name, header_type);
-      }
-      if ((header_type->kind == TYPE_procedure && header_type->u.t_procedure.is_forward) || (header_type->kind == TYPE_function && header_type->u.t_function.is_forward)) {
-        if (header_type->kind == TYPE_function){
-          st.insert("result", header_type->u.t_function.result_type);
-        }
-        for (Formal* f: formal_list) {
-          f->sem();
-        }
-      }
-    }
-};
 
 
 class Block: public AST {
@@ -218,11 +79,142 @@ public:
     size = st.getSizeOfCurrentScope();
     st.closeScope();
   }
-  virtual void run() const override {
-    for (int i = 0; i < size; ++i) rt_stack.push_back(0);
-    for (Stmt *s : stmt_list) s->run();
-    for (int i = 0; i < size; ++i) rt_stack.pop_back();
+  // virtual void run() const override {
+    //   for (int i = 0; i < size; ++i) rt_stack.push_back(0);
+    //   for (Stmt *s : stmt_list) s->run();
+    //   for (int i = 0; i < size; ++i) rt_stack.pop_back();
+    // }
+  };
+
+
+class Stmt: public AST {
+    //this is intentionally left empty
+};
+
+
+class Expr: public AST {
+protected:
+  Type type;
+private:
+  bool is_sem_called = false;
+public:
+  bool type_check(myType t) {
+    if (!is_sem_called){
+      is_sem_called = true;
+      sem();
+    }
+    return (type->kind == t);
   }
+  virtual Value eval() const {
+    Value value;
+    value.integer_value = 0;
+    return value;
+  }
+  Type get_expr_type() {
+    return type;
+  }
+};
+
+
+class Header: public AST {
+  private:
+    Type header_type;
+    string name;
+    std::vector<Formal *> formal_list;
+  public:
+    // Procedure
+    Header(string n, std::vector<Formal*> fl) : name(n), formal_list(fl) {
+      header_type = type_procedure(false);
+      for (Formal *f: fl){
+        header_type->u.t_procedure.arg_types.push_back(fl->get_formal_type());
+        header_type->u.t_procedure.is_by_ref_arr.push_back(fl->get_is_by_ref());
+      }
+    }
+    // Function
+    Header(string n, std::vector<Formal*> fl, Type rt) : name(n), formal_list(fl) {
+      header_type = type_function(rt, false);
+      for (Formal *f: fl){
+        header_type->u.t_function.arg_types.push_back(fl->get_formal_type());
+        header_type->u.t_function.is_by_ref_arr.push_back(fl->get_is_by_ref());
+      }
+    }
+    // Procedure
+    Header(string n) : name(n), formal_list(fl) {
+      header_type = type_procedure(false);
+    }
+    // Function
+    Header(string n, Type rt) : name(n), formal_list(fl){
+      header_type = type_function(rt, false);
+    }
+    ~Header() {
+      for (Formal *f : formal_list) delete f;
+      formal_list.clear();
+      delete header_type;
+    }
+    void printOn(std::ostream &out) const override{
+      if (header_type->kind==TYPE_procedure){
+        out << "Procedure " << name ;
+      }
+      else if (header_type->kind==TYPE_function){
+        out << "Function" << name << ", result type: ";
+        print_type(header_type->u.t_function.result_type);
+      }
+      if (!formal_list.empty()){
+        out << " with arguments "  ;
+      }
+      for (Formal *f : formal_list){
+        out << *f << " ";
+      }
+    }
+    void set_forward(){
+      if (header_type->kind == TYPE_function){
+        header_type->u.t_function.is_forward = true;
+      }
+      else {
+        header_type->u.t_procedure.is_forward = true;
+      }
+    }
+    void sem() const override {
+      // first check if in SymbolTable
+      SymbolEntry *e = st.lookup(name);
+      if (e != nullptr){  //already declared
+        if (e->type->kind != header_type->kind) {
+          ERROR("Declared both as function and procedure.");
+        }
+        if (header_type->kind == TYPE_procedure && (header_type->u.t_procedure.is_forward || !e->type->u.t_procedure.is_forward)){
+          ERROR("Procedure " + name + " already declared.");
+        }
+        if (header_type->kind == TYPE_function && (header_type->u.t_function.is_forward || !e->type->u.t_function.is_forward)){
+          ERROR("Function " + name + " already declared.");
+        }
+        if (!equal_types(e->type, header_type)){
+          if (header_type->kind == TYPE_function){
+            ERROR("Function " + name + " differs from forward declaration");
+          }
+          else {
+            ERROR("Procedure " + name + " differs from forward declaration");
+          }
+        }
+        if (e->type->kind == TYPE_function){
+          e->type->u.t_function.is_forward = false;
+        }
+        else {
+          e->type->u.t_procedure.is_forward = false;
+        }
+      }
+      // not declared, insert
+      else{
+        st.insert(name, header_type);
+      }
+      if ((header_type->kind == TYPE_procedure && !header_type->u.t_procedure.is_forward) || (header_type->kind == TYPE_function && !header_type->u.t_function.is_forward)) {
+        if (header_type->kind == TYPE_function){
+          st.insert("result", header_type->u.t_function.result_type);
+        }
+        for (Formal* f: formal_list) {
+          f->sem();
+        }
+      }
+    }
 };
 
 
@@ -232,16 +224,8 @@ class Formal: public AST {
     Type type;
     bool is_by_ref;
   public:
-    Formal(string var_str, std::vector<Id*> vnl, Type t) {
-      var_name_list = vnl;
-      type = t;
-      is_by_ref = true;
-    }
-    Formal(std::vector<Id*> vnl, Type t) {
-      var_name_list = vnl;
-      type = t;
-      is_by_ref = false;
-    }
+    Formal(string var_str, std::vector<Id*> vnl, Type t) : var_name_list(vnl), type(t), is_by_ref(true){}
+    Formal(std::vector<Id*> vnl, Type t) : var_name_list(vnl), type(t), is_by_ref(false){}
     ~Formal() {
       for (Id* id: var_name_list) {
         delete id;
@@ -262,7 +246,7 @@ class Formal: public AST {
     bool get_is_by_ref() {
       return is_by_ref;
     }
-    void sem() override {
+    void sem() const override {
       for (Id* id: var_name_list) {
         id->insertIntoCurrentScope();
       }
@@ -278,23 +262,41 @@ private:
   Header *header;
   Block *body;
 public:
-  Local(string lts, std::vector<Id*> nl) {
-    local_type = 0;
-    local_type_str = lts;
-    name_list = nl;
-  }
-  Local(Header *h, Block *b) {
-    local_type = 1;
-    header = h;
-    body = b;
-  }
-  Local(Header *h) {
-    local_type = 2;
-    header = h;
+  Local(string lts, std::vector<Id*> nl) : local_type(0), local_type_str(lts), name_list(nl) {}
+  Local(Header *h, Block *b) : local_type(1), header(h), body(b) {}
+  Local(Header *h) : local_type(2), header(h){
     header->set_forward();
   }
-
-  virtual void sem() override {
+  ~Local(){
+    if (local_type == 0){
+      for (Id* id : name_list){
+        delete id;
+      }
+    }
+    else if (local_type == 1){
+      delete header;
+      delete body;
+    }
+    else {
+      delete header;
+    }
+  }
+  void printOn(std::ostream &out) const override {
+    out << "Local ";
+    if (local_type == 0){
+      out << local_type_str << " ";
+      for (Id* id : name_list){
+        out << *id << " ";
+      }
+    }
+    else if (local_type == 1){
+      out << *header << " " << *body << " ";
+    }
+    else {
+      out << *header << " ";
+    }
+  }
+  void sem() const override {
     if (local_type == 0) {
       if (local_type_str == "var") {
         for (Id* id : name_list) {
@@ -306,9 +308,6 @@ public:
           id->set_type(type_label());
           id->insertIntoCurrentScope();
         }
-      }
-      else {
-        exit(1);
       }
     }
     else {
@@ -324,27 +323,22 @@ public:
 
 
 class Lvalue: public Expr {
-public:
-  virtual Value eval() const override {}
+  //this is intentionally left empty
 };
 
 
 class Rvalue: public Expr {
-protected:
-  Type type;
-//sem(), type_check(type t)->bool, eval()
-public:
-  virtual Value eval() const override {}
+  //this is intentionally left empty
 };
 
 
-//pif
 class Id: public Lvalue {
 private:
   string var;
 public:
-  Id(string v): var(v) {
-
+  Id(string v): var(v) {}
+  ~Id() {
+    //this is intentionally left empty
   }
   void set_type(Type t) {
     type->kind = t;
@@ -352,13 +346,13 @@ public:
   void insertIntoCurrentScope() {
     st.insert(var, type);
   }
-  virtual void printOn(std::ostream &out) const override {
+  void printOn(std::ostream &out) const override {
     out << "Id(" << var << ")";
   }
-  virtual Value eval() const override {
+  Value eval() const override {
     return globals[var]->value;
   }
-  virtual void sem() override {
+  void sem() override {
     SymbolEntry *e = st.lookup(var);
     if (e != null) {
       type = e->type;
@@ -367,37 +361,103 @@ public:
 };
 
 
+class Dereference: public Lvalue {
+private:
+  Expr *expr;
+public:
+  Dereference(Expr *e) : expr(e) {}
+  ~Dereference(){
+    delete expr;
+  }
+  void printOn(std::ostream &out) const override {
+    out << "Dereference " << *expr;
+  }
+  void sem() override {
+    if (!expr->type_check(TYPE_pointer)){
+      ERROR("Attempt of dereferencing non-pointer expression");
+    }
+    type = expr->type->u.t_pointer.type;
+  }
+};
+
+
+class Array: public Lvalue {
+private:
+  Lvalue *lvalue;
+  Expr *expr;
+public:
+  Array(Lvalue *lv, Expr *e) : lvalue(lv), expr(e) {}
+  ~Array(){
+    delete lvalue;
+    delete expr;
+  }
+  void printOn(std::ostream &out) const override {
+    out << "Array " << *lvalue << " [" << *expr << "]";
+  }
+  void sem() override {
+    if (!expr->type_check(TYPE_integer)){
+      ERROR("Non-integer value used for array indexing.");
+    }
+    if (lvalue->type_check(TYPE_arrayI)){
+      type = lvalue->type->u.t_arrayI.type;
+    }
+    else if (lvalue->type_check(TYPE_arrayII)){
+      type = lvalue->type->u.t_arrayII.type;
+    }
+    else {
+      ERROR("Indexing non-array lvalue.");
+    }
+  }
+};
+
+
+class Stringconst: public Lvalue {
+private:
+  string str;
+public:
+  Stringconst(string s) : str(s) {}
+  ~Stringconst(){
+    // this is intentionally left empty
+  }
+  void printOn(std::ostream &out) const override {
+    out << "Stringconst " << str;
+  }
+  void sem() override {
+    type = type_arrayI(str.length() + 1, type_char());
+  }
+};
+
+
 class BinOp: public Rvalue {
 private:
   Expr *left;
-  char *op;
+  string op;
   Expr *right;
 public:
-  BinOp(Expr *l, char *o, Expr *r): left(l), op(o), right(r) {}
+  BinOp(Expr *l, string o, Expr *r): left(l), op(o), right(r) {}
   ~BinOp() { delete left; delete right; }
-  virtual void printOn(std::ostream &out) const override {
+  void printOn(std::ostream &out) const override {
     out << op << "(" << *left << ", " << *right << ")";
   }
-  virtual void sem() override {
+  void sem() const override {
     if (( left->type_check(TYPE_arrayI) ) || ( left->type_check(TYPE_arrayII) ) || ( right->type_check(TYPE_arrayI) ) || ( right->type_check(TYPE_arrayII) )) {
-      exit(1);
+      ERROR("BinOp operands have incompatible type for operation '" + op + "'");
     }
     if (( left->type_check(TYPE_pointer) ) && !( right->type_check(TYPE_pointer) )) {
-      exit(1);
+      ERROR("BinOp operands have incompatible type for operation '" + op + "'");
     }
     if (( left->type_check(TYPE_char) ) && !( right->type_check(TYPE_char) )) {
-      exit(1);
+      ERROR("BinOp operands have incompatible type for operation '" + op + "'");
     }
     if (( left->type_check(TYPE_boolean) ) && !( right->type_check(TYPE_boolean) )) {
-      exit(1);
+      ERROR("BinOp operands have incompatible type for operation '" + op + "'");
     }
     if ((( left->type_check(TYPE_integer) ) && !( right->type_check(TYPE_integer) )) || (( left->type_check(TYPE_integer) ) && !( right->type_check(TYPE_real) ))) {
-      exit(1);
+      ERROR("BinOp operands have incompatible type for operation '" + op + "'");
     }
     if ((( left->type_check(TYPE_real) ) && !( right->type_check(TYPE_integer) )) || (( left->type_check(TYPE_real) ) && !( right->type_check(TYPE_real) ))) {
-      exit(1);
+      ERROR("BinOp operands have incompatible type for operation '" + op + "'");
     }
-
     if (!std::strcmp(op, "+") || !std::strcmp(op, "-") || !std::strcmp(op, "*")) {
       if (( left->type_check(TYPE_integer) ) && ( right->type_check(TYPE_integer) )) {
         type->kind = TYPE_integer;
@@ -406,7 +466,7 @@ public:
         type->kind = TYPE_real;
       }
       else {
-        exit(1);
+        ERROR("BinOp operands have incompatible type for operation '" + op + "'");
       }
     }
     else if (!std::strcmp(op, "/")) {
@@ -414,7 +474,7 @@ public:
         type->kind = TYPE_real;
       }
       else {
-        exit(1);
+        ERROR("BinOp operands have incompatible type for operation '" + op + "'");
       }
     }
     else if (!std::strcmp(op, "div") || !std::strcmp(op, "mod")) {
@@ -422,7 +482,7 @@ public:
         type->kind = TYPE_integer;
       }
       else {
-        exit(1);
+        ERROR("BinOp operands have incompatible type for operation '" + op + "'");
       }
     }
     else if (!std::strcmp(op, "=") || !std::strcmp(op, "<>")) {
@@ -433,7 +493,7 @@ public:
         type->kind = TYPE_boolean;
       }
       else {
-        exit(1);
+        ERROR("BinOp operands have incompatible type for operation '" + op + "'");
       }
     }
     else if (!std::strcmp(op, "<") || !std::strcmp(op, ">") || !std::strcmp(op, ">=") || !std::strcmp(op, "<=")) {
@@ -441,15 +501,11 @@ public:
         type->kind = TYPE_boolean;
       }
       else {
-        exit(1);
+        ERROR("BinOp operands have incompatible type for operation '" + op + "'");
       }
     }
-    else {
-      exit(1);
-    }
-
   }
-  virtual Value eval() const override {
+  Value eval() const override {
     Value value;
     if (!std::strcmp(op, "+")) {
       if ( left->type_check(TYPE_integer) ) {
@@ -673,7 +729,39 @@ public:
 
 
 class UnOp: public Rvalue {
-  virtual Value eval() const override {
+private:
+  char *op;
+  Expr *right;
+public:
+  UnOp(char *o, Expr *r): op(o), right(r) {}
+  ~UnOp() {
+    delete right;
+  }
+  void printOn(std::ostream &out) const override {
+    out << op << "(" << *right << ")";
+  }
+  void sem() override {
+    if (!std::strcmp(op, "+") || !std::strcmp(op, "-")) {
+      if (right->type_check(TYPE_integer)) {
+        type = type_integer();
+      }
+      else if (right->type_check(TYPE_real)) {
+        type = type_real();
+      }
+      else{
+        ERROR("UnOp operand has incompatible type for operation '" + op + "'");
+      }
+    }
+    else if (!std::strcmp(op, "not")) {
+      if (right->type_check(TYPE_boolean)) {
+        type = type_boolean();
+      }
+      else{
+        ERROR("UnOp operand has incompatible type for operation '" + op + "'");
+      }
+    }
+  }
+  Value eval() const override {
     Value value;
     if (!std::strcmp(op, "+")) {
       if (right->type_check(TYPE_integer)) {
@@ -695,127 +783,144 @@ class UnOp: public Rvalue {
       value.boolean_value = !right->eval().boolean_value;
     }
     else if (!std::strcmp(op, "@"){
-      value.pointer_value = &right
+      value.pointer_value = right;
     }
     return value;
   }
 };
 
-//pif
+
 class Nil: public Rvalue {
   Nil() {}
-  virtual void printOn(std::ostream &out) const override {
+  void printOn(std::ostream &out) const override {
     out << "Nil";
   }
-  virtual Value eval() const override {
+  Value eval() const override {
     Value value;
     value.pointer_value = nullptr;
     return value;
   }
-  virtual void sem() override { type->kind=TYPE_pointer; }
+  void sem() const override {
+    type->kind=TYPE_pointer;
+  }
 };
 
 
-//pif
 class Charconst: public Rvalue {
 private:
   char char_const;
 public:
   Charconst(char c): char_const(c) {}
-  virtual void printOn(std::ostream &out) const override {
+  ~Charconst(){
+    // This is intentionally left empty
+  }
+  void printOn(std::ostream &out) const override {
     out << "Charconst(" << char_const << ")";
   }
-  virtual Value eval() const override {
+  Value eval() const override {
     Value value;
     value.char_value = char_const;
     return value;
   }
-  virtual void sem() override { type->kind=TYPE_char; }
+  void sem() const override {
+    type->kind = TYPE_char;
+  }
 };
 
 
-//pif
 class Realconst: public Rvalue {
 private:
   double num;
 public:
   Realconst(double r): num(r) {}
-  virtual void printOn(std::ostream &out) const override {
+  ~Realconst(){
+    // This is intentionally left empty
+  }
+  void printOn(std::ostream &out) const override {
     out << "Realconst(" << num << ")";
   }
-  virtual Value eval() const override {
+  Value eval() const override {
     Value value;
     value.real_value = num;
     return value;
   }
-  virtual void sem() override { type->kind=TYPE_real; }
+  void sem() const override {
+    type->kind=TYPE_real;
+  }
 };
 
 
-//pif
 class Bool: public Rvalue {
 private:
   string boolean;
 public:
   Bool(string s): boolean(s) {}
-  virtual void printOn(std::ostream &out) const override {
+  ~Bool(){
+    // This is intentionally left empty
+  }
+  void printOn(std::ostream &out) const override {
     out << "Bool(" << boolean << ")";
   }
-  virtual Value eval() const override {
+  Value eval() const override {
     Value value;
     value.boolean_value = (boolean == "true");
     return value;
   }
-  virtual void sem() override { type->kind=TYPE_boolean; }
+  void sem() const override {
+    type->kind=TYPE_boolean;
+  }
 };
 
-
-//pif
+ 
 class Intconst: public Rvalue {
 private:
   int num;
 public:
   Intconst(int n): num(n) {}
-  virtual void printOn(std::ostream &out) const override {
+  ~Intconst(){
+    // This is intentionally left empty
+  }
+  void printOn(std::ostream &out) const override {
     out << "Intconst(" << num << ")";
   }
-  virtual Value eval() const override {
+  Value eval() const override {
     Value value;
     value.integer_value = num;
     return value;
   }
-  virtual void sem() override { type->kind=TYPE_integer; }
+  void sem() const override {
+    type->kind=TYPE_integer;
+  }
 };
 
 
-//pif
 class While: public Stmt {
 private:
   Expr *expr;
   Stmt *stmt;
 public:
   While(Expr *e, Stmt *s): expr(e), stmt(s) {}
-  ~While() { delete expr; delete stmt; }
-  virtual void printOn(std::ostream &out) const override {
+  ~While() {
+    delete expr;
+    delete stmt;
+  }
+  void printOn(std::ostream &out) const override {
     out << "While(" << *expr << ", " << *stmt << ")";
   }
-  virtual void sem() override {
-    if (expr->type_check(TYPE_boolean)){
-      stmt->sem();
+  void sem() const override {
+    if (!expr->type_check(TYPE_boolean)){
+      ERROR("Condition of while statement is of non-boolean type");
     }
-    else{
-      exit(1);
-    }
+    stmt->sem();
   }
-  virtual void run() const override {
-    while (expr->eval().boolean_value){
-      stmt->run();
-    }
-  }
+  // void run() const override {
+  //   while (expr->eval().boolean_value){
+  //     stmt->run();
+  //   }
+  // }
 };
 
 
-//pif
 class If: public Stmt {
 private:
   Expr *cond;
@@ -824,42 +929,40 @@ private:
 public:
   If(Expr *c, Stmt *s1, Stmt *s2 = nullptr):
     cond(c), stmt1(s1), stmt2(s2) {}
-  ~If() { delete cond; delete stmt1; delete stmt2; }
-  virtual void printOn(std::ostream &out) const override {
+  ~If() {
+    delete cond;
+    delete stmt1;
+    delete stmt2;
+  }
+  void printOn(std::ostream &out) const override {
     out << "If(" << *cond << ", " << *stmt1;
     if (stmt2 != nullptr) out << ", " << *stmt2;
     out << ")";
   }
-  virtual void sem() override {
-    if (cond->type_check(TYPE_boolean)){
-      stmt1->sem();
-      if (stmt2 != nullptr) stmt2->sem();
+  void sem() const override {
+    if (!cond->type_check(TYPE_boolean)){
+      ERROR("Condition of if is of non-boolean type.");
     }
-    else {
-      exit(1);
-    }
+    stmt1->sem();
+    if (stmt2 != nullptr) stmt2->sem();
   }
-  virtual void run() const override {
-    if (cond->eval().boolean_value)
-      stmt1->run();
-    else if (stmt2 != nullptr)
-      stmt2->run();
-  }
+  // void run() const override {
+  //   if (cond->eval().boolean_value)
+  //     stmt1->run();
+  //   else if (stmt2 != nullptr)
+  //     stmt2->run();
+  // }
 };
 
 
-class Call: public Stmt {
+class Call: public Stmt, public Rvalue {
   private:
     string name;
     std::vector<Expr*> expr_list;
+    bool is_stmt=false;
   public:
-    Call(string n) {
-      name = n;
-    }
-    Call(string n, std::vector<Expr*> el) {
-      name = n;
-      expr_list = el;
-    }
+    Call(string n) : name(n) {}
+    Call(string n, std::vector<Expr*> el) : name(n), expr_list(el) {}
     ~Call() {
       for (Expr *r : expr_list) delete e;
       expr_list.clear();
@@ -873,48 +976,51 @@ class Call: public Stmt {
         out << *expr << ' ';
       }
     }
+    void is_statement() : is_stmt(true) {}
     void sem() override {
       // first check if in SymbolTable
       Symbolentry *e = st.lookup(name);
       if (e == nullptr) {
         ERROR("Called function or procedure '" + name + "' was not defined.");
-        exit(1);
+      }
+      for (Expr* e : expr_list){
+        e->sem();
       }
       if (e->type->kind == TYPE_procedure){
+        if (!is_stmt){
+          ERROR("Procedure called as rvalue.");
+        }
         if (e->type->u.t_procedure.is_forward) {
           ERROR("Called procedure '" + name + "' has only been forward declared.");
-          exit(1);
         }
         if (expr_list.size() != e->type->u.t_procedure.arg_types.size()) {
           ERROR("Different amount of arguments given for procedure '" + name + "'.");
-          exit(1);
         }
         for (int arg_idx = 0; arg_idx < expr_list.size(); ++arg_idx) {
           if (!equal_types(expr_list[arg_idx]->type, e->type->u.t_procedure.arg_types[arg_idx])) {
             ERROR("Not right type of argument in call of procedure '" + name + "'.");
-            exit(1);
           }
         }
       }
       else if (e->type->kind == TYPE_function){
+        if (is_stmt){
+          ERROR("Function called as a statement.");
+        }
         if (e->type->u.t_function.is_forward) {
           ERROR("Called function '" + name + "' has only been forward declared.");
-          exit(1);
         }
         if (expr_list.size() != e->type->u.t_function.arg_types.size()) {
           ERROR("Different amount of arguments given for function '" + name + "'.");
-          exit(1);
         }
         for (int arg_idx = 0; arg_idx < expr_list.size(); ++arg_idx) {
           if (!equal_types(expr_list[arg_idx]->type, e->type->u.t_function.arg_types[arg_idx])) {
             ERROR("Not right type of argument in call of function '" + name + "'.");
-            exit(1);
           }
         }
+        type = e->type->u.t_function.result_type;
       }
       else {
         ERROR("Call of '" + name + "' with type different than function or procedure.");
-        exit(1);
       }
     }
 };
@@ -925,10 +1031,7 @@ private:
   Lvalue *lvalue;
   Expr *expr;
 public:
-  Assignment(Lvalue *lv, Expr *e){
-    lvalue = lv;
-    expr = e;
-  }
+  Assignment(Lvalue *lv, Expr *e) : lvalue(lv), expr(e) {}
   ~Assignment(){
     delete lvalue;
     delete expr;
@@ -936,7 +1039,9 @@ public:
   void printOn(std::ostream &out) const override {
     out << "Assignment " << *lvalue << " = " << *expr;
   }
-  void sem() override{
+  void sem() const override{
+    lvalue->sem();
+    expr->sem();
     Type lvalue_type = lvalue->get_expr_type();
     Type expr_type = expr->get_expr_type();
     if (!equal_types(lvalue_type, expr_type)
@@ -945,85 +1050,7 @@ public:
     && !(lvalue_type->kind == TYPE_real && expr_type->kind == TYPE_integer)
     && !(lvalue_type->kind == TYPE_arrayII && expr_type->kind == TYPE_arrayI && equal_types(lvalue_type->u.t_arrayII.type, expr_type->u.t_arrayI.type))){
       ERROR("Assignement of wrong type.");
-      exit(1);
     }
-  }
-};
-
-
-class Dereference: public Lvalue {
-private:
-  Expr *expr;
-public:
-  Dereference(Expr *e){
-    expr = e;
-  }
-  ~Dereference(){
-    delete expr;
-  }
-  void printOn(std::ostream &out) const override {
-    out << "Dereference " << *expr;
-  }
-  void sem() override {
-    if (!expr->type_check(TYPE_pointer)){
-      ERROR ("Attempt of dereferencing non-pointer expression");
-      exit(1);
-    }
-    type = expr->type->u.t_pointer.type;
-  }
-};
-
-
-class Array: public Lvalue {
-private:
-  Lvalue *lvalue;
-  Expr *expr;
-public:
-  Array(Lvalue *lv, Expr *e){
-    lvalue = lv;
-    expr = e;
-  }
-  ~Array(){
-    delete lvalue;
-    delete expr;
-  }
-  void printOn(std::ostream &out) const override {
-    out << "Array " << *lvalue << " [" << *expr << "]";
-  }
-  void sem() override {
-    if (!expr->type_check(TYPE_integer)){
-      ERROR("Non-integer value used for array indexing.");
-      exit(1);
-    }
-    if (lvalue->type_check(TYPE_arrayI)){
-      type = lvalue->type->u.t_arrayI.type;
-    }
-    else if (lvalue->type_check(TYPE_arrayII)){
-      type = lvalue->type->u.t_arrayII.type;
-    }
-    else {
-      ERROR("Indexing non-array lvalue.");
-      exit(1);
-    }
-  }
-};
-
-
-class Stringconst: public Lvalue {
-private:
-  string str;
-public:
-  Stringconst(string s){
-    str = s;
-  }
-  ~Stringconst(){
-    // this is intentionally left empty
-  }
-  void printOn(std::ostream &out) const override {
-    out << "Stringconst " << str;
-  }
-  void sem() override {
-    type = type_arrayI(str.length() + 1, type_char());
   }
 };
 
@@ -1033,10 +1060,7 @@ private:
   string label_name;
   Stmt *stmt;
 public:
-  Label(string ln, Stmt *s) {
-    label_name = ln;
-    stmt = s;
-  }
+  Label(string ln, Stmt *s) : label_name(ln), stmt(s) {}
   ~Label() {
     delete stmt;
   }
@@ -1044,17 +1068,16 @@ public:
     out << "Label '" << label_name << "' with statement ";
     stmt->printOn(out);
   }
-  void sem() override {
+  void sem() const override {
     SymbolEntry *e = st.lookup(label_name);
     if (e == nullptr || e->type->kind != TYPE_label) {
       ERROR(label_name + " is not a label in this scope.");
-      exit(1);
     }
     if (e->type->u.t_label.is_used) {
       ERROR("Label " + label_name + " already used.");
-      exit(1);
     }
     e->type->u.t_label.is_used = true;
+    stmt->sem();
   }
 };
 
@@ -1063,20 +1086,17 @@ class Goto: public Stmt {
 private:
   string label_name;
 public:
-  Goto(string ln) {
-    label_name = ln;
-  }
+  Goto(string ln) : label_name(ln) {}
   ~Goto() {
     // this is intentionally left empty
   }
   void printOn(std::ostream &out) const override {
     out << "Goto '" << label_name << "'";
   }
-  void sem() override {
+  void sem() const override {
     SymbolEntry *e = st.lookup(label_name);
     if (e == nullptr || e->type->kind != TYPE_label) {
       ERROR("Label '" + label_name + "' not defined.");
-      exit(1);
     }
     e->type->u.t_label.is_called = true;
   }
@@ -1094,7 +1114,7 @@ public:
   void printOn(std::ostream &out) const override {
     out << "Return";
   }
-  void sem() override {
+  void sem() const override {
     // this is intentionally left empty
   }
 };
@@ -1106,15 +1126,8 @@ private:
   Expr *expr;
   bool is_array;
 public:
-  New(Lvalue *lv) {
-    lvalue = lv;
-    is_array = false;
-  }
-  New(Expr *e, Lvalue *lv) {
-    lvalue = lv;
-    expr = e;
-    is_array = true;
-  }
+  New(Lvalue *lv) : lvalue(lv), is_array(false) {}
+  New(Expr *e, Lvalue *lv) : lvalue(lv), expr(e), is_array(true) {}
   ~New() {
     delete lvalue;
     delete expr;
@@ -1126,19 +1139,17 @@ public:
     }
     out << " " << *lvalue;
   }
-  void sem() override {
+  void sem() const override {
     if (!lvalue->type_check(TYPE_pointer)) {
       ERROR("Attempt of dynamic memory allocation to non-pointer lvalue.");
-      exit(1);
     }
     if (is_array) {
+      expr->sem();
       if (lvalue->get_expr_type()->u.t_pointer.type->kind != TYPE_arrayI) {
         ERROR("Lvalue of new [] is not an arrayI.");
-        exit(1);
       }
       if (expr->get_expr_type()->kind != TYPE_integer) {
         ERROR("Indexing with non-integer expression.");
-        exit(1);
       }
     }
   }
@@ -1150,10 +1161,7 @@ private:
   Lvalue *lvalue;
   bool is_array;
 public:
-  Dispose(string dispose_type_str, Lvalue *lv) {
-    lvalue = lv;
-    is_array = (dispose_type_str == "array_pointer");
-  }
+  Dispose(string dispose_type_str, Lvalue *lv) : lvalue(lv), is_array((dispose_type_str == "array_pointer")) {}
   ~Dispose() {
     delete lvalue;
   }
@@ -1164,26 +1172,12 @@ public:
     }
     out << " " << *lvalue;
   }
-  void sem() override {
+  void sem() const override {
     if (!lvalue->type_check(TYPE_pointer)) {
       ERROR("Attempt of dynamic memory deallocation to non-pointer lvalue.");
-      exit(1);
     }
     if (is_array && lvalue->get_expr_type()->u.t_pointer.type->kind != TYPE_arrayI) {
       ERROR("Lvalue of new [] is not an arrayI.");
-      exit(1);
     }
   }
 };
-
-
-
-
-
-
-
-
-
-
-
-
