@@ -62,7 +62,7 @@ public:
     b->stmt_list.clear();
     delete b;
   }
-  virtual void printOn(std::ostream &out) const override {
+  virtual void printOn(std::ostream &out) override {
     out << "Block(";
     bool first = true;
     for (Local *l : local_list) {
@@ -84,7 +84,7 @@ public:
     size = st.getSizeOfCurrentScope();
     st.closeScope();
   }
-  // virtual void run() const override {
+  // virtual void run() override {
     //   for (int i = 0; i < size; ++i) rt_stack.push_back(0);
     //   for (Stmt *s : stmt_list) s->run();
     //   for (int i = 0; i < size; ++i) rt_stack.pop_back();
@@ -156,7 +156,7 @@ class Header: public AST {
       formal_list.clear();
       delete header_type;
     }
-    void printOn(std::ostream &out) const override{
+    void printOn(std::ostream &out) override{
       if (header_type->kind==TYPE_procedure){
         out << "Procedure " << name ;
       }
@@ -179,7 +179,7 @@ class Header: public AST {
         header_type->u.t_procedure.is_forward = true;
       }
     }
-    void sem() const override {
+    void sem() override {
       // first check if in SymbolTable
       SymbolEntry *e = st.lookup(name);
       if (e != nullptr){  //already declared
@@ -238,7 +238,7 @@ class Formal: public AST {
       var_name_list.clear();
       delete type;
     }
-    void printOn(std::ostream &out) const override {
+    void printOn(std::ostream &out) override {
       out << "Formal ";
       for (Id* id: var_name_list) {
         out << *id << ' ';
@@ -251,7 +251,7 @@ class Formal: public AST {
     bool get_is_by_ref() {
       return is_by_ref;
     }
-    void sem() const override {
+    void sem() override {
       for (Id* id: var_name_list) {
         id->insertIntoCurrentScope();
       }
@@ -286,7 +286,7 @@ public:
       delete header;
     }
   }
-  void printOn(std::ostream &out) const override {
+  void printOn(std::ostream &out) override {
     out << "Local ";
     if (local_type == 0){
       out << local_type_str << " ";
@@ -301,7 +301,7 @@ public:
       out << *header << " ";
     }
   }
-  void sem() const override {
+  void sem() override {
     if (local_type == 0) {
       if (local_type_str == "var") {
         for (Id* id : name_list) {
@@ -351,10 +351,10 @@ public:
   void insertIntoCurrentScope() {
     st.insert(var, type);
   }
-  void printOn(std::ostream &out) const override {
+  void printOn(std::ostream &out) override {
     out << "Id(" << var << ")";
   }
-  Value eval() const override {
+  Value eval() override {
     return globals[var]->value;
   }
   void sem() override {
@@ -374,7 +374,7 @@ public:
   ~Dereference(){
     delete expr;
   }
-  void printOn(std::ostream &out) const override {
+  void printOn(std::ostream &out) override {
     out << "Dereference " << *expr;
   }
   void sem() override {
@@ -396,7 +396,7 @@ public:
     delete lvalue;
     delete expr;
   }
-  void printOn(std::ostream &out) const override {
+  void printOn(std::ostream &out) override {
     out << "Array " << *lvalue << " [" << *expr << "]";
   }
   void sem() override {
@@ -424,7 +424,7 @@ public:
   ~Stringconst(){
     // this is intentionally left empty
   }
-  void printOn(std::ostream &out) const override {
+  void printOn(std::ostream &out) override {
     out << "Stringconst " << str;
   }
   void sem() override {
@@ -441,10 +441,10 @@ private:
 public:
   BinOp(Expr *l, string o, Expr *r): left(l), op(o), right(r) {}
   ~BinOp() { delete left; delete right; }
-  void printOn(std::ostream &out) const override {
+  void printOn(std::ostream &out) override {
     out << op << "(" << *left << ", " << *right << ")";
   }
-  void sem() const override {
+  void sem() override {
     if (( left->type_check(TYPE_arrayI) ) || ( left->type_check(TYPE_arrayII) ) || ( right->type_check(TYPE_arrayI) ) || ( right->type_check(TYPE_arrayII) )) {
       ERROR("BinOp operands have incompatible type for operation '" + op + "'");
     }
@@ -510,7 +510,7 @@ public:
       }
     }
   }
-  Value eval() const override {
+  Value eval() override {
     Value value;
     if (!std::strcmp(op, "+")) {
       if ( left->type_check(TYPE_integer) ) {
@@ -742,7 +742,7 @@ public:
   ~UnOp() {
     delete right;
   }
-  void printOn(std::ostream &out) const override {
+  void printOn(std::ostream &out) override {
     out << op << "(" << *right << ")";
   }
   void sem() override {
@@ -766,7 +766,7 @@ public:
       }
     }
   }
-  Value eval() const override {
+  Value eval() override {
     Value value;
     if (!std::strcmp(op, "+")) {
       if (right->type_check(TYPE_integer)) {
@@ -797,15 +797,15 @@ public:
 
 class Nil: public Rvalue {
   Nil() {}
-  void printOn(std::ostream &out) const override {
+  void printOn(std::ostream &out) override {
     out << "Nil";
   }
-  Value eval() const override {
+  Value eval() override {
     Value value;
     value.pointer_value = nullptr;
     return value;
   }
-  void sem() const override {
+  void sem() override {
     type->kind=TYPE_pointer;
   }
 };
@@ -819,15 +819,15 @@ public:
   ~Charconst(){
     // This is intentionally left empty
   }
-  void printOn(std::ostream &out) const override {
+  void printOn(std::ostream &out) override {
     out << "Charconst(" << char_const << ")";
   }
-  Value eval() const override {
+  Value eval() override {
     Value value;
     value.char_value = char_const;
     return value;
   }
-  void sem() const override {
+  void sem() override {
     type->kind = TYPE_char;
   }
 };
@@ -841,15 +841,15 @@ public:
   ~Realconst(){
     // This is intentionally left empty
   }
-  void printOn(std::ostream &out) const override {
+  void printOn(std::ostream &out) override {
     out << "Realconst(" << num << ")";
   }
-  Value eval() const override {
+  Value eval() override {
     Value value;
     value.real_value = num;
     return value;
   }
-  void sem() const override {
+  void sem() override {
     type->kind=TYPE_real;
   }
 };
@@ -863,20 +863,20 @@ public:
   ~Bool(){
     // This is intentionally left empty
   }
-  void printOn(std::ostream &out) const override {
+  void printOn(std::ostream &out) override {
     out << "Bool(" << boolean << ")";
   }
-  Value eval() const override {
+  Value eval() override {
     Value value;
     value.boolean_value = (boolean == "true");
     return value;
   }
-  void sem() const override {
+  void sem() override {
     type->kind=TYPE_boolean;
   }
 };
 
- 
+
 class Intconst: public Rvalue {
 private:
   int num;
@@ -885,15 +885,15 @@ public:
   ~Intconst(){
     // This is intentionally left empty
   }
-  void printOn(std::ostream &out) const override {
+  void printOn(std::ostream &out) override {
     out << "Intconst(" << num << ")";
   }
-  Value eval() const override {
+  Value eval() override {
     Value value;
     value.integer_value = num;
     return value;
   }
-  void sem() const override {
+  void sem() override {
     type->kind=TYPE_integer;
   }
 };
@@ -909,16 +909,16 @@ public:
     delete expr;
     delete stmt;
   }
-  void printOn(std::ostream &out) const override {
+  void printOn(std::ostream &out) override {
     out << "While(" << *expr << ", " << *stmt << ")";
   }
-  void sem() const override {
+  void sem() override {
     if (!expr->type_check(TYPE_boolean)){
       ERROR("Condition of while statement is of non-boolean type");
     }
     stmt->sem();
   }
-  // void run() const override {
+  // void run() override {
   //   while (expr->eval().boolean_value){
   //     stmt->run();
   //   }
@@ -939,19 +939,19 @@ public:
     delete stmt1;
     delete stmt2;
   }
-  void printOn(std::ostream &out) const override {
+  void printOn(std::ostream &out) override {
     out << "If(" << *cond << ", " << *stmt1;
     if (stmt2 != nullptr) out << ", " << *stmt2;
     out << ")";
   }
-  void sem() const override {
+  void sem() override {
     if (!cond->type_check(TYPE_boolean)){
       ERROR("Condition of if is of non-boolean type.");
     }
     stmt1->sem();
     if (stmt2 != nullptr) stmt2->sem();
   }
-  // void run() const override {
+  // void run() override {
   //   if (cond->eval().boolean_value)
   //     stmt1->run();
   //   else if (stmt2 != nullptr)
@@ -972,7 +972,7 @@ class Call: public Stmt, public Rvalue {
       for (Expr *r : expr_list) delete e;
       expr_list.clear();
     }
-    void printOn(std::ostream &out) const override{
+    void printOn(std::ostream &out) override{
       out << "Call of procedure or function '" << name << "'";
       if (!expr_list.empty()){
         out << " with arguments ";
@@ -1041,10 +1041,10 @@ public:
     delete lvalue;
     delete expr;
   }
-  void printOn(std::ostream &out) const override {
+  void printOn(std::ostream &out) override {
     out << "Assignment " << *lvalue << " = " << *expr;
   }
-  void sem() const override{
+  void sem() override{
     lvalue->sem();
     expr->sem();
     Type lvalue_type = lvalue->get_expr_type();
@@ -1069,11 +1069,11 @@ public:
   ~Label() {
     delete stmt;
   }
-  void printOn(std::ostream &out) const override {
+  void printOn(std::ostream &out) override {
     out << "Label '" << label_name << "' with statement ";
     stmt->printOn(out);
   }
-  void sem() const override {
+  void sem() override {
     SymbolEntry *e = st.lookup(label_name);
     if (e == nullptr || e->type->kind != TYPE_label) {
       ERROR(label_name + " is not a label in this scope.");
@@ -1095,10 +1095,10 @@ public:
   ~Goto() {
     // this is intentionally left empty
   }
-  void printOn(std::ostream &out) const override {
+  void printOn(std::ostream &out) override {
     out << "Goto '" << label_name << "'";
   }
-  void sem() const override {
+  void sem() override {
     SymbolEntry *e = st.lookup(label_name);
     if (e == nullptr || e->type->kind != TYPE_label) {
       ERROR("Label '" + label_name + "' not defined.");
@@ -1116,10 +1116,10 @@ public:
   ~Return() {
     // this is intentionally left empty
   }
-  void printOn(std::ostream &out) const override {
+  void printOn(std::ostream &out) override {
     out << "Return";
   }
-  void sem() const override {
+  void sem() override {
     // this is intentionally left empty
   }
 };
@@ -1137,14 +1137,14 @@ public:
     delete lvalue;
     delete expr;
   }
-  void printOn(std::ostream &out) const override {
+  void printOn(std::ostream &out) override {
     out << "New";
     if (is_array) {
       out << " [" << *expr << "]";
     }
     out << " " << *lvalue;
   }
-  void sem() const override {
+  void sem() override {
     if (!lvalue->type_check(TYPE_pointer)) {
       ERROR("Attempt of dynamic memory allocation to non-pointer lvalue.");
     }
@@ -1170,14 +1170,14 @@ public:
   ~Dispose() {
     delete lvalue;
   }
-  void printOn(std::ostream &out) const override {
+  void printOn(std::ostream &out) override {
     out << "Dispose";
     if (is_array) {
       out << " []";
     }
     out << " " << *lvalue;
   }
-  void sem() const override {
+  void sem() override {
     if (!lvalue->type_check(TYPE_pointer)) {
       ERROR("Attempt of dynamic memory deallocation to non-pointer lvalue.");
     }
