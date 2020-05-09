@@ -120,7 +120,7 @@ local_list			: /*nothing*/		{ $$ = new Block(); }
 
 local 				: "var" var_name_type_list	{ $$ = new Local("var", $2); }
 				| "label" var_name_list ';'	{ $$ = new Local("label", $2); }
-				| header ';' body ';'		{ $$ = new Local($1, $3); }
+				| header ';' body ';'		{ $$ = new Local_after_block($1, $3); }
 				| "forward" header ';'		{ $$ = new Local($2); }
 				;
 

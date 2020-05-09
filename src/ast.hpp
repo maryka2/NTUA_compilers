@@ -49,6 +49,264 @@ class Stmt: public AST {
 };
 
 
+class Expr: public AST {
+protected:
+  Type type;
+private:
+  bool is_sem_called = false;
+public:
+  bool type_check(myType t) {
+    if (!is_sem_called){
+      is_sem_called = true;
+      sem();
+    }
+    return (type->kind == t);
+  }
+  virtual Value eval() {
+    Value value;
+    value.integer_value = 0;
+    return value;
+  }
+  Type get_expr_type() {
+    return type;
+  }
+};
+
+
+class Lvalue: public Expr {
+  //this is intentionally left empty
+};
+
+
+class Rvalue: public Expr {
+  //this is intentionally left empty
+};
+
+
+class Id: public Lvalue {
+private:
+  string var;
+public:
+  Id(string v): var(v) {}
+  ~Id() {
+    //this is intentionally left empty
+  }
+  void set_type(Type t) {
+    type = t;
+  }
+  void insertIntoCurrentScope() {
+    st.insert(var, type);
+  }
+  void printOn(std::ostream &out) const override {
+    out << "Id(" << var << ")";
+  }
+  Value eval() override {
+    return globals[var]->value;
+  }
+  void sem() override {
+    SymbolEntry *e = st.lookup(var);
+    if (e != nullptr) {
+      type = e->type;
+    }
+  }
+};
+
+
+class Formal: public AST {
+private:
+  std::vector<Id*> var_name_list;
+  Type type;
+  bool is_by_ref;
+public:
+  Formal() {}
+  Formal(string var_str, std::vector<Id*> vnl, Type t) : var_name_list(vnl), type(t), is_by_ref(true){}
+  Formal(std::vector<Id*> vnl, Type t) : var_name_list(vnl), type(t), is_by_ref(false){}
+  ~Formal() {
+    for (Id* id: var_name_list) {
+      delete id;
+    }
+    var_name_list.clear();
+    delete type;
+  }
+  void printOn(std::ostream &out) const override {
+    out << "Formal ";
+    for (Id* id: var_name_list) {
+      out << *id << ' ';
+    }
+    print_type(type);
+  }
+  Type get_formal_type() {
+    return type;
+  }
+  bool get_is_by_ref() {
+    return is_by_ref;
+  }
+  void sem() override {
+    for (Id* id: var_name_list) {
+      id->insertIntoCurrentScope();
+    }
+  }
+};
+
+
+class Header: public AST {
+private:
+  Type header_type;
+  string name;
+  std::vector<Formal *> formal_list;
+public:
+  // Procedure
+  Header(string n, std::vector<Formal*> fl) : name(n), formal_list(fl) {
+    header_type = type_procedure(false);
+    for (Formal *f: fl){
+      header_type->u.t_procedure.arg_types.push_back(fl->get_formal_type());
+      header_type->u.t_procedure.is_by_ref_arr.push_back(fl->get_is_by_ref());
+    }
+  }
+  // Function
+  Header(string n, std::vector<Formal*> fl, Type rt) : name(n), formal_list(fl) {
+    header_type = type_function(rt, false);
+    for (Formal *f: fl){
+      header_type->u.t_function.arg_types.push_back(fl->get_formal_type());
+      header_type->u.t_function.is_by_ref_arr.push_back(fl->get_is_by_ref());
+    }
+  }
+  // Procedure
+  Header(string n) : name(n), formal_list(fl) {
+    header_type = type_procedure(false);
+  }
+  // Function
+  Header(string n, Type rt) : name(n), formal_list(fl){
+    header_type = type_function(rt, false);
+  }
+  ~Header() {
+    for (Formal *f : formal_list) delete f;
+    formal_list.clear();
+    delete header_type;
+  }
+  void printOn(std::ostream &out) const override{
+    if (header_type->kind==TYPE_procedure){
+      out << "Procedure " << name ;
+    }
+    else if (header_type->kind==TYPE_function){
+      out << "Function" << name << ", result type: ";
+      print_type(header_type->u.t_function.result_type);
+    }
+    if (!formal_list.empty()){
+      out << " with arguments "  ;
+    }
+    for (Formal *f : formal_list){
+      out << *f << " ";
+    }
+  }
+  void set_forward(){
+    if (header_type->kind == TYPE_function){
+      header_type->u.t_function.is_forward = true;
+    }
+    else {
+      header_type->u.t_procedure.is_forward = true;
+    }
+  }
+  void sem() override {
+    // first check if in SymbolTable
+    SymbolEntry *e = st.lookup(name);
+    if (e != nullptr){  //already declared
+      if (e->type->kind != header_type->kind) {
+        ERROR("Declared both as function and procedure.");
+      }
+      if (header_type->kind == TYPE_procedure && (header_type->u.t_procedure.is_forward || !e->type->u.t_procedure.is_forward)){
+        ERROR("Procedure " + name + " already declared.");
+      }
+      if (header_type->kind == TYPE_function && (header_type->u.t_function.is_forward || !e->type->u.t_function.is_forward)){
+        ERROR("Function " + name + " already declared.");
+      }
+      if (!equal_types(e->type, header_type)){
+        if (header_type->kind == TYPE_function){
+          ERROR("Function " + name + " differs from forward declaration");
+        }
+        else {
+          ERROR("Procedure " + name + " differs from forward declaration");
+        }
+      }
+      if (e->type->kind == TYPE_function){
+        e->type->u.t_function.is_forward = false;
+      }
+      else {
+        e->type->u.t_procedure.is_forward = false;
+      }
+    }
+    // not declared, insert
+    else{
+      st.insert(name, header_type);
+    }
+    if ((header_type->kind == TYPE_procedure && !header_type->u.t_procedure.is_forward) || (header_type->kind == TYPE_function && !header_type->u.t_function.is_forward)) {
+      if (header_type->kind == TYPE_function){
+        st.insert("result", header_type->u.t_function.result_type);
+      }
+      for (Formal* f: formal_list) {
+        f->sem();
+      }
+    }
+  }
+};
+
+
+class Local: public AST {
+private:
+  int local_type;
+  string local_type_str;
+  std::vector<Id*> name_list;
+  Header *header;
+public:
+  Local(string lts, std::vector<Id*> nl) : local_type(0), local_type_str(lts), name_list(nl) {}
+  Local(Header *h) : local_type(1), header(h){
+    header->set_forward();
+  }
+  ~Local(){
+    if (local_type == 0){
+      for (Id* id : name_list){
+        delete id;
+      }
+    }
+    else {
+      delete header;
+    }
+  }
+  void printOn(std::ostream &out) const override {
+    out << "Local ";
+    if (local_type == 0){
+      out << local_type_str << " ";
+      for (Id* id : name_list){
+        out << *id << " ";
+      }
+    }
+    else {
+      out << *header << " ";
+    }
+  }
+  void sem() override {
+    if (local_type == 0) {
+      if (local_type_str == "var") {
+        for (Id* id : name_list) {
+          id->insertIntoCurrentScope();
+        }
+      }
+      else if (local_type_str == "label") {
+        for (Id* id : name_list) {
+          id->set_type(type_label());
+          id->insertIntoCurrentScope();
+        }
+      }
+    }
+    else {
+      st.openScope();
+      header->sem();
+      st.closeScope();
+    }
+  }
+};
+
+
 class Block: public Stmt {
 private:
   std::vector<Local *> local_list;
@@ -94,275 +352,27 @@ public:
     //   for (Stmt *s : stmt_list) s->run();
     //   for (int i = 0; i < size; ++i) rt_stack.pop_back();
     // }
-};
+  };
 
 
-class Expr: public AST {
-protected:
-  Type type;
+class Local_after_block: public Local {
 private:
-  bool is_sem_called = false;
-public:
-  bool type_check(myType t) {
-    if (!is_sem_called){
-      is_sem_called = true;
-      sem();
-    }
-    return (type->kind == t);
-  }
-  virtual Value eval() {
-    Value value;
-    value.integer_value = 0;
-    return value;
-  }
-  Type get_expr_type() {
-    return type;
-  }
-};
-
-
-class Header: public AST {
-  private:
-    Type header_type;
-    string name;
-    std::vector<Formal *> formal_list;
-  public:
-    // Procedure
-    Header(string n, std::vector<Formal*> fl) : name(n), formal_list(fl) {
-      header_type = type_procedure(false);
-      for (Formal *f: fl){
-        header_type->u.t_procedure.arg_types.push_back(fl->get_formal_type());
-        header_type->u.t_procedure.is_by_ref_arr.push_back(fl->get_is_by_ref());
-      }
-    }
-    // Function
-    Header(string n, std::vector<Formal*> fl, Type rt) : name(n), formal_list(fl) {
-      header_type = type_function(rt, false);
-      for (Formal *f: fl){
-        header_type->u.t_function.arg_types.push_back(fl->get_formal_type());
-        header_type->u.t_function.is_by_ref_arr.push_back(fl->get_is_by_ref());
-      }
-    }
-    // Procedure
-    Header(string n) : name(n), formal_list(fl) {
-      header_type = type_procedure(false);
-    }
-    // Function
-    Header(string n, Type rt) : name(n), formal_list(fl){
-      header_type = type_function(rt, false);
-    }
-    ~Header() {
-      for (Formal *f : formal_list) delete f;
-      formal_list.clear();
-      delete header_type;
-    }
-    void printOn(std::ostream &out) const override{
-      if (header_type->kind==TYPE_procedure){
-        out << "Procedure " << name ;
-      }
-      else if (header_type->kind==TYPE_function){
-        out << "Function" << name << ", result type: ";
-        print_type(header_type->u.t_function.result_type);
-      }
-      if (!formal_list.empty()){
-        out << " with arguments "  ;
-      }
-      for (Formal *f : formal_list){
-        out << *f << " ";
-      }
-    }
-    void set_forward(){
-      if (header_type->kind == TYPE_function){
-        header_type->u.t_function.is_forward = true;
-      }
-      else {
-        header_type->u.t_procedure.is_forward = true;
-      }
-    }
-    void sem() override {
-      // first check if in SymbolTable
-      SymbolEntry *e = st.lookup(name);
-      if (e != nullptr){  //already declared
-        if (e->type->kind != header_type->kind) {
-          ERROR("Declared both as function and procedure.");
-        }
-        if (header_type->kind == TYPE_procedure && (header_type->u.t_procedure.is_forward || !e->type->u.t_procedure.is_forward)){
-          ERROR("Procedure " + name + " already declared.");
-        }
-        if (header_type->kind == TYPE_function && (header_type->u.t_function.is_forward || !e->type->u.t_function.is_forward)){
-          ERROR("Function " + name + " already declared.");
-        }
-        if (!equal_types(e->type, header_type)){
-          if (header_type->kind == TYPE_function){
-            ERROR("Function " + name + " differs from forward declaration");
-          }
-          else {
-            ERROR("Procedure " + name + " differs from forward declaration");
-          }
-        }
-        if (e->type->kind == TYPE_function){
-          e->type->u.t_function.is_forward = false;
-        }
-        else {
-          e->type->u.t_procedure.is_forward = false;
-        }
-      }
-      // not declared, insert
-      else{
-        st.insert(name, header_type);
-      }
-      if ((header_type->kind == TYPE_procedure && !header_type->u.t_procedure.is_forward) || (header_type->kind == TYPE_function && !header_type->u.t_function.is_forward)) {
-        if (header_type->kind == TYPE_function){
-          st.insert("result", header_type->u.t_function.result_type);
-        }
-        for (Formal* f: formal_list) {
-          f->sem();
-        }
-      }
-    }
-};
-
-
-class Formal: public AST {
-  private:
-    std::vector<Id*> var_name_list;
-    Type type;
-    bool is_by_ref;
-  public:
-    Formal() {}
-    Formal(string var_str, std::vector<Id*> vnl, Type t) : var_name_list(vnl), type(t), is_by_ref(true){}
-    Formal(std::vector<Id*> vnl, Type t) : var_name_list(vnl), type(t), is_by_ref(false){}
-    ~Formal() {
-      for (Id* id: var_name_list) {
-        delete id;
-      }
-      var_name_list.clear();
-      delete type;
-    }
-    void printOn(std::ostream &out) const override {
-      out << "Formal ";
-      for (Id* id: var_name_list) {
-        out << *id << ' ';
-      }
-      print_type(type);
-    }
-    Type get_formal_type() {
-      return type;
-    }
-    bool get_is_by_ref() {
-      return is_by_ref;
-    }
-    void sem() override {
-      for (Id* id: var_name_list) {
-        id->insertIntoCurrentScope();
-      }
-    }
-};
-
-
-class Local: public Block {
-private:
-  int local_type;
-  string local_type_str;
-  std::vector<Id*> name_list;
   Header *header;
   Block *body;
 public:
-  Local(string lts, std::vector<Id*> nl) : local_type(0), local_type_str(lts), name_list(nl) {}
-  Local(Header *h, Block *b) : local_type(1), header(h), body(b) {}
-  Local(Header *h) : local_type(2), header(h){
-    header->set_forward();
-  }
-  ~Local(){
-    if (local_type == 0){
-      for (Id* id : name_list){
-        delete id;
-      }
-    }
-    else if (local_type == 1){
-      delete header;
-      delete body;
-    }
-    else {
-      delete header;
-    }
+  Local_after_block(Header *h, Block *b) : header(h), body(b) {}
+  ~Local_after_block(){
+    delete header;
+    delete body;
   }
   void printOn(std::ostream &out) const override {
-    out << "Local ";
-    if (local_type == 0){
-      out << local_type_str << " ";
-      for (Id* id : name_list){
-        out << *id << " ";
-      }
-    }
-    else if (local_type == 1){
-      out << *header << " " << *body << " ";
-    }
-    else {
-      out << *header << " ";
-    }
+    out << "Local " << *header << " " << *body << " ";
   }
   void sem() override {
-    if (local_type == 0) {
-      if (local_type_str == "var") {
-        for (Id* id : name_list) {
-          id->insertIntoCurrentScope();
-        }
-      }
-      else if (local_type_str == "label") {
-        for (Id* id : name_list) {
-          id->set_type(type_label());
-          id->insertIntoCurrentScope();
-        }
-      }
-    }
-    else {
-      st.openScope();
-      header->sem();
-      if (local_type == 1) {
-        body->sem();
-      }
-      st.closeScope();
-    }
-  }
-};
-
-
-class Lvalue: public Expr {
-  //this is intentionally left empty
-};
-
-
-class Rvalue: public Expr {
-  //this is intentionally left empty
-};
-
-
-class Id: public Lvalue {
-private:
-  string var;
-public:
-  Id(string v): var(v) {}
-  ~Id() {
-    //this is intentionally left empty
-  }
-  void set_type(Type t) {
-    type = t;
-  }
-  void insertIntoCurrentScope() {
-    st.insert(var, type);
-  }
-  void printOn(std::ostream &out) const override {
-    out << "Id(" << var << ")";
-  }
-  Value eval() override {
-    return globals[var]->value;
-  }
-  void sem() override {
-    SymbolEntry *e = st.lookup(var);
-    if (e != nullptr) {
-      type = e->type;
-    }
+    st.openScope();
+    header->sem();
+    body->sem();
+    st.closeScope();
   }
 };
 
@@ -464,7 +474,7 @@ public:
     if ((( left->type_check(TYPE_real) ) && !( right->type_check(TYPE_integer) )) || (( left->type_check(TYPE_real) ) && !( right->type_check(TYPE_real) ))) {
       ERROR("BinOp operands have incompatible type for operation '" + op + "'");
     }
-    if (!std::strcmp(op, "+") || !std::strcmp(op, "-") || !std::strcmp(op, "*")) {
+    if (op == "+" || op == "-" || op == "*") {
       if (( left->type_check(TYPE_integer) ) && ( right->type_check(TYPE_integer) )) {
         type->kind = TYPE_integer;
       }
@@ -475,7 +485,7 @@ public:
         ERROR("BinOp operands have incompatible type for operation '" + op + "'");
       }
     }
-    else if (!std::strcmp(op, "/")) {
+    else if ( op == "/" ) {
       if (( left->type_check(TYPE_integer) ) || ( left->type_check(TYPE_real) )) {
         type->kind = TYPE_real;
       }
@@ -483,7 +493,7 @@ public:
         ERROR("BinOp operands have incompatible type for operation '" + op + "'");
       }
     }
-    else if (!std::strcmp(op, "div") || !std::strcmp(op, "mod")) {
+    else if ( op == "div" ||  op == "mod" ) {
       if (( left->type_check(TYPE_integer) ) && ( right->type_check(TYPE_integer) )) {
         type->kind = TYPE_integer;
       }
@@ -491,10 +501,10 @@ public:
         ERROR("BinOp operands have incompatible type for operation '" + op + "'");
       }
     }
-    else if (!std::strcmp(op, "=") || !std::strcmp(op, "<>")) {
+    else if ( op == "=" ||  op == "<>") {
       type->kind = TYPE_boolean;
     }
-    else if (!std::strcmp(op, "or") || !std::strcmp(op, "and")) {
+    else if ( op == "or" ||  op == "and") {
       if (( left->type_check(TYPE_boolean) )) {
         type->kind = TYPE_boolean;
       }
@@ -502,7 +512,7 @@ public:
         ERROR("BinOp operands have incompatible type for operation '" + op + "'");
       }
     }
-    else if (!std::strcmp(op, "<") || !std::strcmp(op, ">") || !std::strcmp(op, ">=") || !std::strcmp(op, "<=")) {
+    else if ( op == "<" ||  op == ">" ||  op == ">=" ||  op == "<=" ) {
       if (( left->type_check(TYPE_integer) ) || ( left->type_check(TYPE_real) )) {
         type->kind = TYPE_boolean;
       }
@@ -513,7 +523,7 @@ public:
   }
   Value eval() override {
     Value value;
-    if (!std::strcmp(op, "+")) {
+    if ( op == "+") {
       if ( left->type_check(TYPE_integer) ) {
         if  ( right->type_check(TYPE_integer) ) {
           value.integer_value = left->eval().integer_value + right->eval().integer_value;
@@ -531,7 +541,7 @@ public:
         }
       }
     }
-    if (!std::strcmp(op, "-")) {
+    if ( op == "-") {
       if ( left->type_check(TYPE_integer) ) {
         if  ( right->type_check(TYPE_integer) ) {
           value.integer_value = left->eval().integer_value - right->eval().integer_value;
@@ -549,7 +559,7 @@ public:
         }
       }
     }
-    if (!std::strcmp(op, "*")) {
+    if ( op == "*" ) {
       if ( left->type_check(TYPE_integer) ) {
         if  ( right->type_check(TYPE_integer) ) {
           value.integer_value = left->eval().integer_value * right->eval().integer_value;
@@ -567,7 +577,7 @@ public:
         }
       }
     }
-    if (!std::strcmp(op, "/")) {
+    if ( op == "/" ) {
       if ( left->type_check(TYPE_integer) ) {
         if  ( right->type_check(TYPE_integer) ) {
           value.real_value = left->eval().integer_value / right->eval().integer_value;
@@ -585,13 +595,13 @@ public:
         }
       }
     }
-    if (!std::strcmp(op, "div")) {
+    if ( op == "div") {
       value.integer_value = left->eval().integer_value / right->eval().integer_value;
     }
-    if (!std::strcmp(op, "mod")) {
+    if ( op == "mod") {
       value.integer_value = left->eval().integer_value % right->eval().integer_value;
     }
-    if (!std::strcmp(op, "=")) {
+    if ( op == "=") {
       if ( left->type_check(TYPE_integer) ) {
         if ( right->type_check(TYPE_integer) ) {
           value.boolean_value = left->eval().integer_value == right->eval().integer_value;
@@ -621,7 +631,7 @@ public:
         value.boolean_value = !equal_strings(left->get_expr_type(), right->get_expr_type(), left->eval(), right->eval());
       }
     }
-    if (!std::strcmp(op, "<>")) {
+    if ( op == "<>" ) {
       if ( left->type_check(TYPE_integer) ) {
         if ( right->type_check(TYPE_integer) ) {
           value.boolean_value = left->eval().integer_value != right->eval().integer_value;
@@ -651,13 +661,13 @@ public:
         value.boolean_value = equal_strings(left->get_expr_type(), right->get_expr_type(), left->eval(), right->eval());
       }
     }
-    if (!std::strcmp(op, "or")) {
+    if ( op == "or" ) {
       value.boolean_value = left->eval().boolean_value || right->eval().boolean_value;
     }
-    if (!std::strcmp(op, "and")) {
+    if ( op == "and" ) {
       value.boolean_value = left->eval().boolean_value && right->eval().boolean_value;
     }
-    if (!std::strcmp(op, ">")) {
+    if ( op == ">" ) {
       if ( left->type_check(TYPE_integer) ) {
         if  ( right->type_check(TYPE_integer) ) {
           value.boolean_value = left->eval().integer_value > right->eval().integer_value;
@@ -675,7 +685,7 @@ public:
         }
       }
     }
-    if (!std::strcmp(op, "<")) {
+    if ( op == "<" ) {
       if ( left->type_check(TYPE_integer) ) {
         if  ( right->type_check(TYPE_integer) ) {
           value.boolean_value = left->eval().integer_value < right->eval().integer_value;
@@ -693,7 +703,7 @@ public:
         }
       }
     }
-    if (!std::strcmp(op, ">=")) {
+    if ( op == ">=" ) {
       if ( left->type_check(TYPE_integer) ) {
         if  ( right->type_check(TYPE_integer) ) {
           value.boolean_value = left->eval().integer_value >= right->eval().integer_value;
@@ -711,7 +721,7 @@ public:
         }
       }
     }
-    if (!std::strcmp(op, "<=")) {
+    if ( op == "<=" ) {
       if ( left->type_check(TYPE_integer) ) {
         if  ( right->type_check(TYPE_integer) ) {
           value.boolean_value = left->eval().integer_value <= right->eval().integer_value;
@@ -747,7 +757,7 @@ public:
     out << op << "(" << *right << ")";
   }
   void sem() override {
-    if (!std::strcmp(op, "+") || !std::strcmp(op, "-")) {
+    if ( op == "+" ||  op == "-" ) {
       if (right->type_check(TYPE_integer)) {
         type = type_integer();
       }
@@ -758,7 +768,7 @@ public:
         ERROR("UnOp operand has incompatible type for operation '" + op + "'");
       }
     }
-    else if (!std::strcmp(op, "not")) {
+    else if ( op == "not") {
       if (right->type_check(TYPE_boolean)) {
         type = type_boolean();
       }
@@ -769,7 +779,7 @@ public:
   }
   Value eval() override {
     Value value;
-    if (!std::strcmp(op, "+")) {
+    if ( op == "+" ) {
       if (right->type_check(TYPE_integer)) {
         value.integer_value = right->eval().integer_value;
       }
@@ -777,7 +787,7 @@ public:
         value.real_value = right->eval().real_value;
       }
     }
-    else if (!std::strcmp(op, "-")) {
+    else if ( op == "-" ) {
       if (right->type_check(TYPE_integer)) {
         value.integer_value = (-1)*right->eval().integer_value;
       }
@@ -785,10 +795,10 @@ public:
         value.real_value = (-1)*right->eval().real_value;
       }
     }
-    else if (!std::strcmp(op, "not")) {
+    else if ( op == "not" ) {
       value.boolean_value = !right->eval().boolean_value;
     }
-    else if (!std::strcmp(op, "@")) {
+    else if ( op == "@" ) {
       value.pointer_value = right;
     }
     return value;
