@@ -1,5 +1,3 @@
 *.o
 *.output
 *.gch
-src/parser.cpp
-src/parser.hpp
