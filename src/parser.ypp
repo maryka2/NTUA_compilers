@@ -74,7 +74,7 @@ std::unordered_map<string, SymbolEntry*> globals;  // Global hash table
 	Header *header;
 	Formal *formal;
 	Block *block;
-	Stmt *stmt
+	Stmt *stmt;
 	std::vector<Id*> var_name_type_list;
 	std::vector<Formal*> formal_list;
 	std::vector<Expr*> expr_list;
@@ -187,7 +187,7 @@ stmt_list			: /*nothing*/				{ $$ = new Block(); }
 				;
 
 
-stmt				: /*nothing*/				{ $$ = new Stmt(); }
+stmt				: /*nothing*/				{ $$ = new EmptyStmt(); }
 				| lvalue ":=" expr			{ $$ = new Assignment($1, $3); }
 				| block					{ $$ = $1; }
 				| call					{ $1->is_statement(); $$ = $1; }

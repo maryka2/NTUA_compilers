@@ -1,7 +1,7 @@
 .PHONY: clean distclean default
 
 CXX=c++
-CXXFLAGS=-Wall -std=c++11
+CXXFLAGS=-Wall -std=c++14
 
 default: pcl
 

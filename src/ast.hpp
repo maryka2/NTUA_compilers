@@ -44,7 +44,12 @@ inline std::ostream& operator<<(std::ostream &out, const AST &t) {
 }
 
 
-class Block: public AST {
+class Stmt: public AST {
+  //this is intentionally left empty
+};
+
+
+class Block: public Stmt {
 private:
   std::vector<Local *> local_list;
   std::vector<Stmt *> stmt_list;
@@ -89,11 +94,6 @@ public:
     //   for (Stmt *s : stmt_list) s->run();
     //   for (int i = 0; i < size; ++i) rt_stack.pop_back();
     // }
-  };
-
-
-class Stmt: public AST {
-    //this is intentionally left empty
 };
 
 
@@ -110,7 +110,7 @@ public:
     }
     return (type->kind == t);
   }
-  virtual Value eval() const {
+  virtual Value eval() {
     Value value;
     value.integer_value = 0;
     return value;
@@ -229,6 +229,7 @@ class Formal: public AST {
     Type type;
     bool is_by_ref;
   public:
+    Formal() {}
     Formal(string var_str, std::vector<Id*> vnl, Type t) : var_name_list(vnl), type(t), is_by_ref(true){}
     Formal(std::vector<Id*> vnl, Type t) : var_name_list(vnl), type(t), is_by_ref(false){}
     ~Formal() {
@@ -346,7 +347,7 @@ public:
     //this is intentionally left empty
   }
   void set_type(Type t) {
-    type->kind = t;
+    type = t;
   }
   void insertIntoCurrentScope() {
     st.insert(var, type);
@@ -359,7 +360,7 @@ public:
   }
   void sem() override {
     SymbolEntry *e = st.lookup(var);
-    if (e != null) {
+    if (e != nullptr) {
       type = e->type;
     }
   }
@@ -381,7 +382,7 @@ public:
     if (!expr->type_check(TYPE_pointer)){
       ERROR("Attempt of dereferencing non-pointer expression");
     }
-    type = expr->type->u.t_pointer.type;
+    type = expr->get_expr_type()->u.t_pointer.type;
   }
 };
 
@@ -404,10 +405,10 @@ public:
       ERROR("Non-integer value used for array indexing.");
     }
     if (lvalue->type_check(TYPE_arrayI)){
-      type = lvalue->type->u.t_arrayI.type;
+      type = lvalue->get_expr_type()->u.t_arrayI.type;
     }
     else if (lvalue->type_check(TYPE_arrayII)){
-      type = lvalue->type->u.t_arrayII.type;
+      type = lvalue->get_expr_type()->u.t_arrayII.type;
     }
     else {
       ERROR("Indexing non-array lvalue.");
@@ -616,8 +617,8 @@ public:
       if ( left->type_check(TYPE_pointer) ) {
         value.boolean_value = left->eval().pointer_value == right->eval().pointer_value;
       }
-      if (is_string(left->type)) {
-        value.boolean_value = !equal_strings(left->type, right->type, left->eval().arrayI_value, right->eval().arrayI_value);
+      if (is_string(left->get_expr_type())) {
+        value.boolean_value = !equal_strings(left->get_expr_type(), right->get_expr_type(), left->eval(), right->eval());
       }
     }
     if (!std::strcmp(op, "<>")) {
@@ -646,8 +647,8 @@ public:
       if ( left->type_check(TYPE_pointer) ) {
         value.boolean_value = left->eval().pointer_value != right->eval().pointer_value;
       }
-      if ( is_string(left->type) ) {
-        value.boolean_value = equal_strings(left->type, right->type, left->eval().arrayI_value, right->eval().arrayI_value);
+      if ( is_string(left->get_expr_type() ) ) {
+        value.boolean_value = equal_strings(left->get_expr_type(), right->get_expr_type(), left->eval(), right->eval());
       }
     }
     if (!std::strcmp(op, "or")) {
@@ -735,10 +736,10 @@ public:
 
 class UnOp: public Rvalue {
 private:
-  char *op;
+  string op;
   Expr *right;
 public:
-  UnOp(char *o, Expr *r): op(o), right(r) {}
+  UnOp(string o, Expr *r): op(o), right(r) {}
   ~UnOp() {
     delete right;
   }
@@ -787,7 +788,7 @@ public:
     else if (!std::strcmp(op, "not")) {
       value.boolean_value = !right->eval().boolean_value;
     }
-    else if (!std::strcmp(op, "@"){
+    else if (!std::strcmp(op, "@")) {
       value.pointer_value = right;
     }
     return value;
@@ -796,6 +797,7 @@ public:
 
 
 class Nil: public Rvalue {
+public:
   Nil() {}
   void printOn(std::ostream &out) const override {
     out << "Nil";
@@ -899,6 +901,19 @@ public:
 };
 
 
+class EmptyStmt: public Stmt {
+public:
+  EmptyStmt() {}
+  ~EmptyStmt() {}
+  void printOn(std::ostream &out) const override {
+    out << "EmptyStmt";
+  }
+  void sem() override {
+    // This is intentionally left empty.
+  }
+};
+
+
 class While: public Stmt {
 private:
   Expr *expr;
@@ -969,7 +984,9 @@ class Call: public Stmt, public Rvalue {
     Call(string n) : name(n) {}
     Call(string n, std::vector<Expr*> el) : name(n), expr_list(el) {}
     ~Call() {
-      for (Expr *r : expr_list) delete e;
+      for (Expr *e : expr_list) {
+        delete e;
+      }
       expr_list.clear();
     }
     void printOn(std::ostream &out) const override{
@@ -981,10 +998,12 @@ class Call: public Stmt, public Rvalue {
         out << *expr << ' ';
       }
     }
-    void is_statement() : is_stmt(true) {}
+    void is_statement() {
+      is_stmt = true;
+    }
     void sem() override {
       // first check if in SymbolTable
-      Symbolentry *e = st.lookup(name);
+      SymbolEntry *e = st.lookup(name);
       if (e == nullptr) {
         ERROR("Called function or procedure '" + name + "' was not defined.");
       }
@@ -1001,8 +1020,8 @@ class Call: public Stmt, public Rvalue {
         if (expr_list.size() != e->type->u.t_procedure.arg_types.size()) {
           ERROR("Different amount of arguments given for procedure '" + name + "'.");
         }
-        for (int arg_idx = 0; arg_idx < expr_list.size(); ++arg_idx) {
-          if (!equal_types(expr_list[arg_idx]->type, e->type->u.t_procedure.arg_types[arg_idx])) {
+        for (unsigned int arg_idx = 0; arg_idx < expr_list.size(); ++arg_idx) {
+          if (!equal_types(expr_list[arg_idx]->get_expr_type(), e->type->u.t_procedure.arg_types[arg_idx])) {
             ERROR("Not right type of argument in call of procedure '" + name + "'.");
           }
         }
@@ -1017,8 +1036,8 @@ class Call: public Stmt, public Rvalue {
         if (expr_list.size() != e->type->u.t_function.arg_types.size()) {
           ERROR("Different amount of arguments given for function '" + name + "'.");
         }
-        for (int arg_idx = 0; arg_idx < expr_list.size(); ++arg_idx) {
-          if (!equal_types(expr_list[arg_idx]->type, e->type->u.t_function.arg_types[arg_idx])) {
+        for (unsigned int arg_idx = 0; arg_idx < expr_list.size(); ++arg_idx) {
+          if (!equal_types(expr_list[arg_idx]->get_expr_type(), e->type->u.t_function.arg_types[arg_idx])) {
             ERROR("Not right type of argument in call of function '" + name + "'.");
           }
         }
@@ -1078,10 +1097,10 @@ public:
     if (e == nullptr || e->type->kind != TYPE_label) {
       ERROR(label_name + " is not a label in this scope.");
     }
-    if (e->type->u.t_label.is_used) {
-      ERROR("Label " + label_name + " already used.");
+    if (e->type->u.t_label.is_defined) {
+      ERROR("Label " + label_name + " already defined.");
     }
-    e->type->u.t_label.is_used = true;
+    e->type->u.t_label.is_defined = true;
     stmt->sem();
   }
 };

@@ -4,16 +4,6 @@
 #include "type.hpp"
 using namespace std;
 
-union Value {
-  int integer_value;
-  double real_value;
-  bool boolean_value;
-  char char_value;
-  void *arrayI_value;
-  void *arrayII_value;
-  void *pointer_value;
-};
-
 // SymbolEntry is a small box in the data stack
 struct SymbolEntry {
   Type type;  // Variable's type
@@ -23,7 +13,7 @@ struct SymbolEntry {
   SymbolEntry(Type t, SymbolEntry *n) : type(t), next(n) {}  // Initializer
 };
 
-std::unordered_map<string, SymbolEntry*> globals;  // FIXME: make it extern when parser.y is used
+extern std::unordered_map<string, SymbolEntry*> globals;
 
 // Scope is a big box in the data stack
 class Scope {

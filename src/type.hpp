@@ -49,6 +49,16 @@ struct Type_tag {
     } u;
 };
 
+union Value {
+  int integer_value;
+  double real_value;
+  bool boolean_value;
+  char char_value;
+  void *arrayI_value;
+  void *arrayII_value;
+  void *pointer_value;
+};
+
 bool equal_strings(Type t1, Type t2, Value v1, Value v2);
 bool is_string(Type t);
 bool equal_types(Type t1, Type t2);
