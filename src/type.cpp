@@ -1,5 +1,33 @@
 #include "type.hpp"
 
+void delete_type(Type t) {
+  if ( t->kind == TYPE_arrayI ){
+    delete_type(t->u.t_arrayI.type);
+  }
+  else if ( t->kind == TYPE_arrayII ){
+    delete_type(t->u.t_arrayII.type);
+  }
+  else if ( t->kind == TYPE_pointer ){
+    delete_type(t->u.t_pointer.type);
+  }
+  else if ( t->kind == TYPE_function ){
+    for (Type t_arg: t->u.t_function.arg_types) {
+      delete_type(t_arg);
+    }
+    t->u.t_function.arg_types.clear();
+    t->u.t_function.is_by_ref_arr.clear();
+    delete_type(t->u.t_function.result_type);
+  }
+  else if ( t->kind == TYPE_procedure ){
+    for (Type t_arg: t->u.t_procedure.arg_types) {
+      delete_type(t_arg);
+    }
+    t->u.t_procedure.arg_types.clear();
+    t->u.t_procedure.is_by_ref_arr.clear();
+  }
+  free(t);
+}
+
 bool equal_strings(Type t1, Type t2, Value v1, Value v2){
   if (t1->u.t_arrayI.dim != t1->u.t_arrayI.dim){
     return false;

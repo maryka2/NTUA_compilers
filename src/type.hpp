@@ -35,7 +35,7 @@ struct Type_tag {
           std::vector<Type> arg_types;
           Type result_type;
           bool is_forward;
-          std::vector<bool> is_by_ref;
+          std::vector<bool> is_by_ref_arr;
         } t_function;
         struct {
           std::vector<Type> arg_types;
@@ -59,6 +59,7 @@ union Value {
   void *pointer_value;
 };
 
+void delete_type(Type t);
 bool equal_strings(Type t1, Type t2, Value v1, Value v2);
 bool is_string(Type t);
 bool equal_types(Type t1, Type t2);

@@ -7,24 +7,39 @@
 #include "symbol.hpp"
 #include "type.hpp"
 
-void ERROR (const string msg)
-{
-  std::cerr << "ERROR: " << msg << "\n";
-  exit(1);
-}
-
 extern std::unordered_map<string, SymbolEntry*> globals;
 
 
 inline std::ostream& operator<<(std::ostream &out, Type t) {
-  switch (t->kind) {
-    case TYPE_integer: out << "integer"; break;
-    case TYPE_real: out << "real"; break;
-    case TYPE_boolean: out << "boolean"; break;
-    case TYPE_char: out << "char"; break;
-    case TYPE_arrayI: out << "arrayI"; break;
-    case TYPE_arrayII: out << "arrayII"; break;
-    case TYPE_pointer: out << "pointer"; break;
+  if ( t->kind == TYPE_integer ) {
+    out << "integer";
+  }
+  else if ( t->kind == TYPE_real ) {
+    out << "real";
+  }
+  else if ( t->kind == TYPE_boolean ){
+     out << "boolean";
+   }
+  else if ( t->kind == TYPE_char ){
+     out << "char";
+   }
+  else if ( t->kind == TYPE_arrayI ){
+     out << "arrayI";
+   }
+  else if ( t->kind == TYPE_arrayII ){
+     out << "arrayII";
+   }
+  else if ( t->kind == TYPE_pointer ){
+     out << "pointer";
+  }
+  else if (t->kind == TYPE_function) {
+    out << "function";
+  }
+  else if (t->kind == TYPE_procedure) {
+    out << "procedure";
+  }
+  else if (t->kind == TYPE_label) {
+    out << "label";
   }
   return out;
 }
@@ -126,7 +141,7 @@ public:
       delete id;
     }
     var_name_list.clear();
-    delete type;
+    delete_type(type);
   }
   void printOn(std::ostream &out) const override {
     out << "Formal ";
@@ -159,30 +174,30 @@ public:
   Header(string n, std::vector<Formal*> fl) : name(n), formal_list(fl) {
     header_type = type_procedure(false);
     for (Formal *f: fl){
-      header_type->u.t_procedure.arg_types.push_back(fl->get_formal_type());
-      header_type->u.t_procedure.is_by_ref_arr.push_back(fl->get_is_by_ref());
+      header_type->u.t_procedure.arg_types.push_back(f->get_formal_type());
+      header_type->u.t_procedure.is_by_ref_arr.push_back(f->get_is_by_ref());
     }
   }
   // Function
   Header(string n, std::vector<Formal*> fl, Type rt) : name(n), formal_list(fl) {
     header_type = type_function(rt, false);
     for (Formal *f: fl){
-      header_type->u.t_function.arg_types.push_back(fl->get_formal_type());
-      header_type->u.t_function.is_by_ref_arr.push_back(fl->get_is_by_ref());
+      header_type->u.t_function.arg_types.push_back(f->get_formal_type());
+      header_type->u.t_function.is_by_ref_arr.push_back(f->get_is_by_ref());
     }
   }
   // Procedure
-  Header(string n) : name(n), formal_list(fl) {
+  Header(string n) : name(n) {
     header_type = type_procedure(false);
   }
   // Function
-  Header(string n, Type rt) : name(n), formal_list(fl){
+  Header(string n, Type rt) : name(n) {
     header_type = type_function(rt, false);
   }
   ~Header() {
     for (Formal *f : formal_list) delete f;
     formal_list.clear();
-    delete header_type;
+    delete_type(header_type);
   }
   void printOn(std::ostream &out) const override{
     if (header_type->kind==TYPE_procedure){

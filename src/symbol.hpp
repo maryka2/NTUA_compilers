@@ -4,6 +4,12 @@
 #include "type.hpp"
 using namespace std;
 
+void ERROR (const string msg)
+{
+  std::cerr << "ERROR: " << msg << "\n";
+  exit(1);
+}
+
 // SymbolEntry is a small box in the data stack
 struct SymbolEntry {
   Type type;  // Variable's type
