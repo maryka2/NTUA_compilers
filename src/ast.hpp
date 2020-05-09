@@ -266,15 +266,20 @@ public:
 };
 
 
+class Block: public Stmt;
+
+
 class Local: public AST {
 private:
   int local_type;
   string local_type_str;
   std::vector<Id*> name_list;
   Header *header;
+  Block *body;
 public:
   Local(string lts, std::vector<Id*> nl) : local_type(0), local_type_str(lts), name_list(nl) {}
-  Local(Header *h) : local_type(1), header(h){
+  Local(Header *h, Block *b) : local_type(1), header(h), body(b) {}
+  Local(Header *h) : local_type(2), header(h){
     header->set_forward();
   }
   ~Local(){
@@ -282,6 +287,10 @@ public:
       for (Id* id : name_list){
         delete id;
       }
+    }
+    else if (local_type == 1){
+      delete header;
+      delete body;
     }
     else {
       delete header;
@@ -294,6 +303,9 @@ public:
       for (Id* id : name_list){
         out << *id << " ";
       }
+    }
+    else if (local_type == 1){
+      out << *header << " " << *body << " ";
     }
     else {
       out << *header << " ";
@@ -316,6 +328,9 @@ public:
     else {
       st.openScope();
       header->sem();
+      if (local_type == 1) {
+        body->sem();
+      }
       st.closeScope();
     }
   }
@@ -368,28 +383,6 @@ public:
     //   for (int i = 0; i < size; ++i) rt_stack.pop_back();
     // }
   };
-
-
-class Local_after_block: public Local {
-private:
-  Header *header;
-  Block *body;
-public:
-  Local_after_block(Header *h, Block *b) : header(h), body(b) {}
-  ~Local_after_block(){
-    delete header;
-    delete body;
-  }
-  void printOn(std::ostream &out) const override {
-    out << "Local " << *header << " " << *body << " ";
-  }
-  void sem() override {
-    st.openScope();
-    header->sem();
-    body->sem();
-    st.closeScope();
-  }
-};
 
 
 class Dereference: public Lvalue {
