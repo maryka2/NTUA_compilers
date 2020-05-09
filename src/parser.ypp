@@ -261,5 +261,9 @@ expr_list			: expr		{ std::vector<Expr*> v; v.push_back($1); $$ = v; }
 
 int main ()
 {
-  return yyparse();
+  int result = yyparse();
+  if (result == 0) {
+    std::cout << "Success.\n";
+  }
+  return result;
 }

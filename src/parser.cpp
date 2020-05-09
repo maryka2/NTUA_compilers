@@ -2216,5 +2216,9 @@ yyreturn:
 
 int main ()
 {
-  return yyparse();
+  int result = yyparse();
+  if (result == 0) {
+    std::cout << "Success.\n";
+  }
+  return result;
 }

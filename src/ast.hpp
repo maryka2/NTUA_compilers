@@ -7,6 +7,11 @@
 #include "symbol.hpp"
 #include "type.hpp"
 
+void ERROR (const string msg)
+{
+  std::cerr << "ERROR: " << msg << "\n";
+  exit(1);
+}
 
 extern std::unordered_map<string, SymbolEntry*> globals;
 

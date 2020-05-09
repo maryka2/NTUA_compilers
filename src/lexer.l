@@ -154,17 +154,6 @@ W [ \t\n\r]
 
 %%
 
-int main ()
-{
-	int token;
-	do {
-		token = yylex();
-		printf("token=%d, lexeme=\"%s\"\n", token, yytext);
-	} while (token!= T_eof);
-
-	return 0;
-}
-
 void ERROR (const char msg [])
 {
 	fprintf (stderr, "ERROR, line %d: %s\n", lineno, msg);
