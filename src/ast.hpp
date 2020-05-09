@@ -266,7 +266,7 @@ public:
 };
 
 
-class Block: public Stmt;
+class Block;
 
 
 class Local: public AST {
@@ -275,7 +275,7 @@ private:
   string local_type_str;
   std::vector<Id*> name_list;
   Header *header;
-  Block *body;
+  Ast *body;
 public:
   Local(string lts, std::vector<Id*> nl) : local_type(0), local_type_str(lts), name_list(nl) {}
   Local(Header *h, Block *b) : local_type(1), header(h), body(b) {}
