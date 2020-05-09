@@ -62,7 +62,7 @@ public:
     b->stmt_list.clear();
     delete b;
   }
-  virtual void printOn(std::ostream &out) override {
+  virtual void printOn(std::ostream &out) const override {
     out << "Block(";
     bool first = true;
     for (Local *l : local_list) {
@@ -156,7 +156,7 @@ class Header: public AST {
       formal_list.clear();
       delete header_type;
     }
-    void printOn(std::ostream &out) override{
+    void printOn(std::ostream &out) const override{
       if (header_type->kind==TYPE_procedure){
         out << "Procedure " << name ;
       }
@@ -238,7 +238,7 @@ class Formal: public AST {
       var_name_list.clear();
       delete type;
     }
-    void printOn(std::ostream &out) override {
+    void printOn(std::ostream &out) const override {
       out << "Formal ";
       for (Id* id: var_name_list) {
         out << *id << ' ';
@@ -286,7 +286,7 @@ public:
       delete header;
     }
   }
-  void printOn(std::ostream &out) override {
+  void printOn(std::ostream &out) const override {
     out << "Local ";
     if (local_type == 0){
       out << local_type_str << " ";
@@ -351,7 +351,7 @@ public:
   void insertIntoCurrentScope() {
     st.insert(var, type);
   }
-  void printOn(std::ostream &out) override {
+  void printOn(std::ostream &out) const override {
     out << "Id(" << var << ")";
   }
   Value eval() override {
@@ -374,7 +374,7 @@ public:
   ~Dereference(){
     delete expr;
   }
-  void printOn(std::ostream &out) override {
+  void printOn(std::ostream &out) const override {
     out << "Dereference " << *expr;
   }
   void sem() override {
@@ -396,7 +396,7 @@ public:
     delete lvalue;
     delete expr;
   }
-  void printOn(std::ostream &out) override {
+  void printOn(std::ostream &out) const override {
     out << "Array " << *lvalue << " [" << *expr << "]";
   }
   void sem() override {
@@ -424,7 +424,7 @@ public:
   ~Stringconst(){
     // this is intentionally left empty
   }
-  void printOn(std::ostream &out) override {
+  void printOn(std::ostream &out) const override {
     out << "Stringconst " << str;
   }
   void sem() override {
@@ -441,7 +441,7 @@ private:
 public:
   BinOp(Expr *l, string o, Expr *r): left(l), op(o), right(r) {}
   ~BinOp() { delete left; delete right; }
-  void printOn(std::ostream &out) override {
+  void printOn(std::ostream &out) const override {
     out << op << "(" << *left << ", " << *right << ")";
   }
   void sem() override {
@@ -742,7 +742,7 @@ public:
   ~UnOp() {
     delete right;
   }
-  void printOn(std::ostream &out) override {
+  void printOn(std::ostream &out) const override {
     out << op << "(" << *right << ")";
   }
   void sem() override {
@@ -797,7 +797,7 @@ public:
 
 class Nil: public Rvalue {
   Nil() {}
-  void printOn(std::ostream &out) override {
+  void printOn(std::ostream &out) const override {
     out << "Nil";
   }
   Value eval() override {
@@ -819,7 +819,7 @@ public:
   ~Charconst(){
     // This is intentionally left empty
   }
-  void printOn(std::ostream &out) override {
+  void printOn(std::ostream &out) const override {
     out << "Charconst(" << char_const << ")";
   }
   Value eval() override {
@@ -841,7 +841,7 @@ public:
   ~Realconst(){
     // This is intentionally left empty
   }
-  void printOn(std::ostream &out) override {
+  void printOn(std::ostream &out) const override {
     out << "Realconst(" << num << ")";
   }
   Value eval() override {
@@ -863,7 +863,7 @@ public:
   ~Bool(){
     // This is intentionally left empty
   }
-  void printOn(std::ostream &out) override {
+  void printOn(std::ostream &out) const override {
     out << "Bool(" << boolean << ")";
   }
   Value eval() override {
@@ -885,7 +885,7 @@ public:
   ~Intconst(){
     // This is intentionally left empty
   }
-  void printOn(std::ostream &out) override {
+  void printOn(std::ostream &out) const override {
     out << "Intconst(" << num << ")";
   }
   Value eval() override {
@@ -909,7 +909,7 @@ public:
     delete expr;
     delete stmt;
   }
-  void printOn(std::ostream &out) override {
+  void printOn(std::ostream &out) const override {
     out << "While(" << *expr << ", " << *stmt << ")";
   }
   void sem() override {
@@ -939,7 +939,7 @@ public:
     delete stmt1;
     delete stmt2;
   }
-  void printOn(std::ostream &out) override {
+  void printOn(std::ostream &out) const override {
     out << "If(" << *cond << ", " << *stmt1;
     if (stmt2 != nullptr) out << ", " << *stmt2;
     out << ")";
@@ -972,7 +972,7 @@ class Call: public Stmt, public Rvalue {
       for (Expr *r : expr_list) delete e;
       expr_list.clear();
     }
-    void printOn(std::ostream &out) override{
+    void printOn(std::ostream &out) const override{
       out << "Call of procedure or function '" << name << "'";
       if (!expr_list.empty()){
         out << " with arguments ";
@@ -1041,7 +1041,7 @@ public:
     delete lvalue;
     delete expr;
   }
-  void printOn(std::ostream &out) override {
+  void printOn(std::ostream &out) const override {
     out << "Assignment " << *lvalue << " = " << *expr;
   }
   void sem() override{
@@ -1069,7 +1069,7 @@ public:
   ~Label() {
     delete stmt;
   }
-  void printOn(std::ostream &out) override {
+  void printOn(std::ostream &out) const override {
     out << "Label '" << label_name << "' with statement ";
     stmt->printOn(out);
   }
@@ -1095,7 +1095,7 @@ public:
   ~Goto() {
     // this is intentionally left empty
   }
-  void printOn(std::ostream &out) override {
+  void printOn(std::ostream &out) const override {
     out << "Goto '" << label_name << "'";
   }
   void sem() override {
@@ -1116,7 +1116,7 @@ public:
   ~Return() {
     // this is intentionally left empty
   }
-  void printOn(std::ostream &out) override {
+  void printOn(std::ostream &out) const override {
     out << "Return";
   }
   void sem() override {
@@ -1137,7 +1137,7 @@ public:
     delete lvalue;
     delete expr;
   }
-  void printOn(std::ostream &out) override {
+  void printOn(std::ostream &out) const override {
     out << "New";
     if (is_array) {
       out << " [" << *expr << "]";
@@ -1170,7 +1170,7 @@ public:
   ~Dispose() {
     delete lvalue;
   }
-  void printOn(std::ostream &out) override {
+  void printOn(std::ostream &out) const override {
     out << "Dispose";
     if (is_array) {
       out << " []";
