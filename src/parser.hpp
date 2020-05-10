@@ -115,9 +115,9 @@ union YYSTYPE
 	Formal *formal;
 	Block *block;
 	Stmt *stmt;
-	std::vector<Id*> var_name_type_list;
-	std::vector<Formal*> formal_list;
-	std::vector<Expr*> expr_list;
+	Id_vector *var_name_type_list;
+	Formal_vector *formal_list;
+	Expr_vector *expr_list;
 	UnOp *unop;
 	BinOp *binop;
 	char op[3];

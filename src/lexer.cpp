@@ -1300,7 +1300,7 @@ YY_RULE_SETUP
 case 67:
 YY_RULE_SETUP
 #line 155 "lexer.l"
-YY_FATAL_ERROR( "flex scanner jammed" );
+ECHO;
 	YY_BREAK
 #line 1306 "lexer.cpp"
 
@@ -2304,6 +2304,11 @@ void yyfree (void * ptr )
 #line 155 "lexer.l"
 
 
+
+void yyerror(const char *msg) {
+  fprintf(stderr, "%s\n", msg);
+  exit(1);
+}
 
 void ERROR (const char msg [])
 {

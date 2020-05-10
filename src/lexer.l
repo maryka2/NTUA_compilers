@@ -154,6 +154,11 @@ W [ \t\n\r]
 
 %%
 
+void yyerror(const char *msg) {
+  fprintf(stderr, "%s\n", msg);
+  exit(1);
+}
+
 void ERROR (const char msg [])
 {
 	fprintf (stderr, "ERROR, line %d: %s\n", lineno, msg);

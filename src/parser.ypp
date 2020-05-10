@@ -75,9 +75,9 @@ std::unordered_map<string, SymbolEntry*> globals;  // Global hash table
 	Formal *formal;
 	Block *block;
 	Stmt *stmt;
-	std::vector<Id*> var_name_type_list;
-	std::vector<Formal*> formal_list;
-	std::vector<Expr*> expr_list;
+	Id_vector *var_name_type_list;
+	Formal_vector *formal_list;
+	Expr_vector *expr_list;
 	UnOp *unop;
 	BinOp *binop;
 	char op[3];
@@ -120,29 +120,29 @@ local_list			: /*nothing*/		{ $$ = new Block(); }
 
 local 				: "var" var_name_type_list	{ $$ = new Local("var", $2); }
 				| "label" var_name_list ';'	{ $$ = new Local("label", $2); }
-				| header ';' body ';'		{ $$ = new Local($1, $3); }
+				| header ';' body ';'		{ $$ = new Local_after_block($1, $3); }
 				| "forward" header ';'		{ $$ = new Local($2); }
 				;
 
 
 
 var_name_type_list		: var_name_list ':' type ';'		{
-  for (Id* id_ptr : $1) {
+  for (Id* id_ptr : $1->get_vector()) {
     id_ptr->set_type($3);
   }
   $$ = $1;
 }
 				| var_name_type_list var_name_list ':' type ';' {
-  for (Id* id_ptr : $2) {
+  for (Id* id_ptr : $2->get_vector()) {
     id_ptr->set_type($4);
-    $1.push_back(id_ptr);
+    $1->append_id(id_ptr);
   }
   $$ = $1;
 }
 				;
 
-var_name_list			: var_name_list ',' T_id 			{ $1.push_back(new Id(std::string($3))); $$ = $1; }
-				| T_id						{ std::vector<Id*> v; v.push_back(new Id(std::string($1))); $$ = v; }
+var_name_list			: var_name_list ',' T_id 			{ $1->append_id(new Id(std::string($3))); $$ = $1; }
+				| T_id						{ $$ = new Id_vector(new Id(std::string($1))); }
 				;
 
 header				: "procedure" T_id '(' formal_list ')'			{ $$ = new Header(std::string($2), $4); }
@@ -151,18 +151,18 @@ header				: "procedure" T_id '(' formal_list ')'			{ $$ = new Header(std::string
 				| "function" T_id '(' ')' ':' type			{ $$ = new Header(std::string($2), $6); }
 				;
 
-formal_list			: formal			{ std::vector<Formal*> v; v.push_back($1); $$ = v; }
-				| formal_list ';' formal   	{ $1.push_back($3); $$ = $1; }
+formal_list			: formal			{ $$ = new Formal_vector($1); }
+				| formal_list ';' formal   	{ $1->append_formal($3); $$ = $1; }
 				;
 
 formal				: "var" var_name_list ':' type		{
-  for (Id* id_ptr : $2) {
+  for (Id* id_ptr : $2->get_vector()) {
     id_ptr->set_type($4);
   }
   $$ = new Formal("var", $2, $4);
 }
 				| var_name_list ':' type		{
-  for (Id* id_ptr : $1) {
+  for (Id* id_ptr : $1->get_vector()) {
     id_ptr->set_type($3);
   }
   $$ = new Formal($1, $3);
@@ -253,8 +253,8 @@ call				: T_id '(' ')'			{ $$ = new Call(std::string($1)); }
 				| T_id '(' expr_list ')'	{ $$ = new Call(std::string($1), $3); }
 				;
 
-expr_list			: expr		{ std::vector<Expr*> v; v.push_back($1); $$ = v; }
-				|  expr_list ',' expr	{ $1.push_back($3); $$ = $1; }
+expr_list			: expr		{ $$ = new Expr_vector($1); }
+				|  expr_list ',' expr	{ $1->append_expr($3); $$ = $1; }
 				;
 
 %%
@@ -267,3 +267,4 @@ int main ()
   }
   return result;
 }
+

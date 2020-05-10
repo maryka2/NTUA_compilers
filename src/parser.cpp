@@ -177,9 +177,9 @@ union YYSTYPE
 	Formal *formal;
 	Block *block;
 	Stmt *stmt;
-	std::vector<Id*> var_name_type_list;
-	std::vector<Formal*> formal_list;
-	std::vector<Expr*> expr_list;
+	Id_vector *var_name_type_list;
+	Formal_vector *formal_list;
+	Expr_vector *expr_list;
 	UnOp *unop;
 	BinOp *binop;
 	char op[3];
@@ -1507,7 +1507,7 @@ yyreduce:
 
   case 8:
 #line 123 "parser.ypp" /* yacc.c:1646  */
-    { (yyval.local) = new Local((yyvsp[-3].header), (yyvsp[-1].block)); }
+    { (yyval.local) = new Local_after_block((yyvsp[-3].header), (yyvsp[-1].block)); }
 #line 1512 "parser.cpp" /* yacc.c:1646  */
     break;
 
@@ -1520,7 +1520,7 @@ yyreduce:
   case 10:
 #line 129 "parser.ypp" /* yacc.c:1646  */
     {
-  for (Id* id_ptr : (yyvsp[-3].var_name_type_list)) {
+  for (Id* id_ptr : (yyvsp[-3].var_name_type_list)->get_vector()) {
     id_ptr->set_type((yyvsp[-1].type));
   }
   (yyval.var_name_type_list) = (yyvsp[-3].var_name_type_list);
@@ -1531,9 +1531,9 @@ yyreduce:
   case 11:
 #line 135 "parser.ypp" /* yacc.c:1646  */
     {
-  for (Id* id_ptr : (yyvsp[-3].var_name_type_list)) {
+  for (Id* id_ptr : (yyvsp[-3].var_name_type_list)->get_vector()) {
     id_ptr->set_type((yyvsp[-1].type));
-    (yyvsp[-4].var_name_type_list).push_back(id_ptr);
+    (yyvsp[-4].var_name_type_list)->append_id(id_ptr);
   }
   (yyval.var_name_type_list) = (yyvsp[-4].var_name_type_list);
 }
@@ -1542,13 +1542,13 @@ yyreduce:
 
   case 12:
 #line 144 "parser.ypp" /* yacc.c:1646  */
-    { (yyvsp[-2].var_name_type_list).push_back(new Id(std::string((yyvsp[0].str)))); (yyval.var_name_type_list) = (yyvsp[-2].var_name_type_list); }
+    { (yyvsp[-2].var_name_type_list)->append_id(new Id(std::string((yyvsp[0].str)))); (yyval.var_name_type_list) = (yyvsp[-2].var_name_type_list); }
 #line 1547 "parser.cpp" /* yacc.c:1646  */
     break;
 
   case 13:
 #line 145 "parser.ypp" /* yacc.c:1646  */
-    { std::vector<Id*> v; v.push_back(new Id(std::string((yyvsp[0].str)))); (yyval.var_name_type_list) = v; }
+    { (yyval.var_name_type_list) = new Id_vector(new Id(std::string((yyvsp[0].str)))); }
 #line 1553 "parser.cpp" /* yacc.c:1646  */
     break;
 
@@ -1578,20 +1578,20 @@ yyreduce:
 
   case 18:
 #line 154 "parser.ypp" /* yacc.c:1646  */
-    { std::vector<Formal*> v; v.push_back((yyvsp[0].formal)); (yyval.formal_list) = v; }
+    { (yyval.formal_list) = new Formal_vector((yyvsp[0].formal)); }
 #line 1583 "parser.cpp" /* yacc.c:1646  */
     break;
 
   case 19:
 #line 155 "parser.ypp" /* yacc.c:1646  */
-    { (yyvsp[-2].formal_list).push_back((yyvsp[0].formal)); (yyval.formal_list) = (yyvsp[-2].formal_list); }
+    { (yyvsp[-2].formal_list)->append_formal((yyvsp[0].formal)); (yyval.formal_list) = (yyvsp[-2].formal_list); }
 #line 1589 "parser.cpp" /* yacc.c:1646  */
     break;
 
   case 20:
 #line 158 "parser.ypp" /* yacc.c:1646  */
     {
-  for (Id* id_ptr : (yyvsp[-2].var_name_type_list)) {
+  for (Id* id_ptr : (yyvsp[-2].var_name_type_list)->get_vector()) {
     id_ptr->set_type((yyvsp[0].type));
   }
   (yyval.formal) = new Formal("var", (yyvsp[-2].var_name_type_list), (yyvsp[0].type));
@@ -1602,7 +1602,7 @@ yyreduce:
   case 21:
 #line 164 "parser.ypp" /* yacc.c:1646  */
     {
-  for (Id* id_ptr : (yyvsp[-2].var_name_type_list)) {
+  for (Id* id_ptr : (yyvsp[-2].var_name_type_list)->get_vector()) {
     id_ptr->set_type((yyvsp[0].type));
   }
   (yyval.formal) = new Formal((yyvsp[-2].var_name_type_list), (yyvsp[0].type));
@@ -1972,13 +1972,13 @@ yyreduce:
 
   case 82:
 #line 256 "parser.ypp" /* yacc.c:1646  */
-    { std::vector<Expr*> v; v.push_back((yyvsp[0].expr)); (yyval.expr_list) = v; }
+    { (yyval.expr_list) = new Expr_vector((yyvsp[0].expr)); }
 #line 1977 "parser.cpp" /* yacc.c:1646  */
     break;
 
   case 83:
 #line 257 "parser.ypp" /* yacc.c:1646  */
-    { (yyvsp[-2].expr_list).push_back((yyvsp[0].expr)); (yyval.expr_list) = (yyvsp[-2].expr_list); }
+    { (yyvsp[-2].expr_list)->append_expr((yyvsp[0].expr)); (yyval.expr_list) = (yyvsp[-2].expr_list); }
 #line 1983 "parser.cpp" /* yacc.c:1646  */
     break;
 
@@ -2222,3 +2222,4 @@ int main ()
   }
   return result;
 }
+

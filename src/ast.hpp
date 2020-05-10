@@ -88,6 +88,22 @@ public:
 };
 
 
+class Expr_vector{
+private:
+  std::vector<Expr *> expr_list;
+public:
+  Expr_vector(Expr *e){
+    expr_list.push_back(e);
+  }
+  void append_expr(Expr *e){
+    expr_list.push_back(e);
+  }
+  std::vector<Expr *> get_vector(){
+    return expr_list;
+  }
+};
+
+
 class Lvalue: public Expr {
   //this is intentionally left empty
 };
@@ -127,6 +143,22 @@ public:
 };
 
 
+class Id_vector{
+private:
+  std::vector<Id *> id_list;
+public:
+  Id_vector(Id *id){
+    id_list.push_back(id);
+  }
+  void append_id(Id *id){
+    id_list.push_back(id);
+  }
+  std::vector<Id *> get_vector(){
+    return id_list;
+  }
+};
+
+
 class Formal: public AST {
 private:
   std::vector<Id*> var_name_list;
@@ -134,8 +166,12 @@ private:
   bool is_by_ref;
 public:
   Formal() {}
-  Formal(string var_str, std::vector<Id*> vnl, Type t) : var_name_list(vnl), type(t), is_by_ref(true){}
-  Formal(std::vector<Id*> vnl, Type t) : var_name_list(vnl), type(t), is_by_ref(false){}
+  Formal(string var_str, Id_vector *vnv, Type t) : type(t), is_by_ref(true){
+    var_name_list = vnv->get_vector();
+  }
+  Formal(Id_vector *vnv, Type t) : type(t), is_by_ref(false){
+    var_name_list = vnv->get_vector();
+  }
   ~Formal() {
     for (Id* id: var_name_list) {
       delete id;
@@ -164,6 +200,22 @@ public:
 };
 
 
+class Formal_vector{
+private:
+  std::vector<Formal *> formal_list;
+public:
+  Formal_vector(Formal *f){
+    formal_list.push_back(f);
+  }
+  void append_formal(Formal *f){
+    formal_list.push_back(f);
+  }
+  std::vector<Formal *> get_vector(){
+    return formal_list;
+  }
+};
+
+
 class Header: public AST {
 private:
   Type header_type;
@@ -171,17 +223,19 @@ private:
   std::vector<Formal *> formal_list;
 public:
   // Procedure
-  Header(string n, std::vector<Formal*> fl) : name(n), formal_list(fl) {
+  Header(string n, Formal_vector *fv) : name(n) {
     header_type = type_procedure(false);
-    for (Formal *f: fl){
+    formal_list = fv->get_vector();
+    for (Formal *f: formal_list){
       header_type->u.t_procedure.arg_types.push_back(f->get_formal_type());
       header_type->u.t_procedure.is_by_ref_arr.push_back(f->get_is_by_ref());
     }
   }
   // Function
-  Header(string n, std::vector<Formal*> fl, Type rt) : name(n), formal_list(fl) {
+  Header(string n, Formal_vector *fv, Type rt) : name(n) {
     header_type = type_function(rt, false);
-    for (Formal *f: fl){
+    formal_list = fv->get_vector();
+    for (Formal *f: formal_list){
       header_type->u.t_function.arg_types.push_back(f->get_formal_type());
       header_type->u.t_function.is_by_ref_arr.push_back(f->get_is_by_ref());
     }
@@ -271,17 +325,19 @@ class Block;
 
 class Local: public AST {
 private:
-  int local_type;
+  int local_type = -1;
   string local_type_str;
   std::vector<Id*> name_list;
   Header *header;
-  Ast *body;
 public:
-  Local(string lts, std::vector<Id*> nl) : local_type(0), local_type_str(lts), name_list(nl) {}
-  Local(Header *h, Block *b) : local_type(1), header(h), body(b) {}
-  Local(Header *h) : local_type(2), header(h){
+  Local(string lts, Id_vector *nv) : local_type(0), local_type_str(lts) {
+    name_list = nv->get_vector();
+  }
+  Local(Header *h) : local_type(1), header(h){
     header->set_forward();
   }
+  Local(Header *h, Block *b){}
+  Local(){}
   ~Local(){
     if (local_type == 0){
       for (Id* id : name_list){
@@ -290,13 +346,9 @@ public:
     }
     else if (local_type == 1){
       delete header;
-      delete body;
-    }
-    else {
-      delete header;
     }
   }
-  void printOn(std::ostream &out) const override {
+  virtual void printOn(std::ostream &out) const override {
     out << "Local ";
     if (local_type == 0){
       out << local_type_str << " ";
@@ -304,14 +356,11 @@ public:
         out << *id << " ";
       }
     }
-    else if (local_type == 1){
-      out << *header << " " << *body << " ";
-    }
     else {
       out << *header << " ";
     }
   }
-  void sem() override {
+  virtual void sem() override {
     if (local_type == 0) {
       if (local_type_str == "var") {
         for (Id* id : name_list) {
@@ -328,9 +377,6 @@ public:
     else {
       st.openScope();
       header->sem();
-      if (local_type == 1) {
-        body->sem();
-      }
       st.closeScope();
     }
   }
@@ -383,6 +429,28 @@ public:
     //   for (int i = 0; i < size; ++i) rt_stack.pop_back();
     // }
   };
+
+
+class Local_after_block: public Local {
+private:
+  Header *header;
+  Block *body;
+public:
+  Local_after_block(Header *h, Block *b) : header(h), body(b) {}
+  ~Local_after_block(){
+    delete header;
+    delete body;
+  }
+  void printOn(std::ostream &out) const override {
+    out << "Local " << *header << " " << *body << " ";
+  }
+  void sem() override {
+    st.openScope();
+    header->sem();
+    body->sem();
+    st.closeScope();
+  }
+};
 
 
 class Dereference: public Lvalue {
@@ -1000,7 +1068,9 @@ class Call: public Stmt, public Rvalue {
     bool is_stmt=false;
   public:
     Call(string n) : name(n) {}
-    Call(string n, std::vector<Expr*> el) : name(n), expr_list(el) {}
+    Call(string n, Expr_vector *ev) : name(n) {
+      expr_list = ev->get_vector();
+    }
     ~Call() {
       for (Expr *e : expr_list) {
         delete e;
@@ -1223,3 +1293,4 @@ public:
     }
   }
 };
+

@@ -18,7 +18,7 @@ parser.hpp parser.cpp: parser.ypp
 parser.o: parser.cpp lexer.hpp ast.hpp symbol.hpp type.cpp
 
 pcl: lexer.o parser.o
-	$(CXX) $(CXXFLAGS) -o pcl lexer.o parser.o
+	$(CXX) $(CXXFLAGS) -o pcl lexer.o parser.o type.cpp
 
 clean:
 	$(RM) lexer.cpp lexer parser.cpp parser.hpp parser.output *.o
