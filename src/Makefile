@@ -8,7 +8,7 @@ default: pcl
 lexer.cpp: lexer.l
 	flex -s -o lexer.cpp lexer.l
 
-lexer.o: lexer.cpp lexer.hpp ast.hpp symbol.hpp
+lexer.o: lexer.cpp lexer.hpp parser.hpp ast.hpp symbol.hpp
 
 lexer: lexer.o
 

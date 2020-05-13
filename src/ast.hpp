@@ -7,6 +7,14 @@
 #include "symbol.hpp"
 #include "type.hpp"
 
+#define ERROR(msg) { std::cerr << "ERROR: " << msg << "\n"; exit(1); }
+
+/*void ERROR (const string msg)
+{
+  std::cerr << "ERROR: " << msg << "\n";
+  exit(1);
+}*/
+
 extern std::unordered_map<string, SymbolEntry*> globals;
 
 
@@ -43,7 +51,6 @@ inline std::ostream& operator<<(std::ostream &out, Type t) {
   }
   return out;
 }
-
 
 class AST {
 public:

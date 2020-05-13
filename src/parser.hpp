@@ -77,20 +77,32 @@ extern int yydebug;
     T_true = 287,
     T_var = 288,
     T_while = 289,
-    T_ne = 290,
-    T_ge = 291,
-    T_le = 292,
-    T_assign = 293,
-    T_semicolon = 294,
-    T_dot = 295,
-    T_rparen = 296,
-    T_colon = 297,
-    T_comma = 298,
-    T_intconst = 299,
-    T_realconst = 300,
-    T_charconst = 301,
-    T_stringconst = 302,
-    T_id = 303
+    T_eq = 290,
+    T_gt = 291,
+    T_lt = 292,
+    T_ne = 293,
+    T_ge = 294,
+    T_le = 295,
+    T_plus = 296,
+    T_minus = 297,
+    T_times = 298,
+    T_rdiv = 299,
+    T_dref = 300,
+    T_ref = 301,
+    T_assign = 302,
+    T_semicolon = 303,
+    T_dot = 304,
+    T_lparen = 305,
+    T_rparen = 306,
+    T_colon = 307,
+    T_comma = 308,
+    T_lbracket = 309,
+    T_rbracket = 310,
+    T_intconst = 311,
+    T_realconst = 312,
+    T_charconst = 313,
+    T_stringconst = 314,
+    T_id = 315
   };
 #endif
 
@@ -99,7 +111,7 @@ extern int yydebug;
 
 union YYSTYPE
 {
-#line 63 "parser.ypp" /* yacc.c:1909  */
+#line 75 "parser.ypp" /* yacc.c:1909  */
 
 	int i;
 	double f;
@@ -124,7 +136,7 @@ union YYSTYPE
 	Id *id;
 	Local *local;
 
-#line 128 "parser.hpp" /* yacc.c:1909  */
+#line 140 "parser.hpp" /* yacc.c:1909  */
 };
 
 typedef union YYSTYPE YYSTYPE;

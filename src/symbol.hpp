@@ -4,12 +4,6 @@
 #include "type.hpp"
 using namespace std;
 
-void ERROR (const string msg)
-{
-  std::cerr << "ERROR: " << msg << "\n";
-  exit(1);
-}
-
 // SymbolEntry is a small box in the data stack
 struct SymbolEntry {
   Type type;  // Variable's type
@@ -30,7 +24,8 @@ public:
   SymbolEntry *insert(string c, Type t, SymbolEntry *n) {
     if (locals.find(c) != locals.end()) {  // Check if there is already a variable with name equal to c in this scope
       // If we are here there is already a variable with the name with that name
-      ERROR("Duplicate variable " + c);  // Print error message
+      std::cerr << ("Duplicate variable " + c);  // Print error message
+      exit(1);
     }
     locals[c] = SymbolEntry(t, n);  // Create new variable
     return &(locals[c]);  // Return pointer to the new variable
@@ -47,7 +42,8 @@ public:
       // For every variable (SymbolEntry) of the top scope
       SymbolEntry e = it->second;
       if (e.type->kind == TYPE_label && e.type->u.t_label.is_called && !e.type->u.t_label.is_defined) {
-        ERROR("Label '" + it->first + "' used but not defined.");
+        std::cerr << ("Label '" + it->first + "' used but not defined.");
+        exit(1);
       }
       globals[it->first] = (it->second).next;  // Make the global hash table point the next occurance of this variable name
     }
