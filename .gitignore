@@ -1,3 +1,5 @@
 *.o
 *.output
 *.gch
+src/pcl
+src/pcl.exe

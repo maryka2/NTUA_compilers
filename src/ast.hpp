@@ -1100,6 +1100,9 @@ class Call: public Stmt, public Rvalue {
       // first check if in SymbolTable
       SymbolEntry *e = st.lookup(name);
       if (e == nullptr) {
+	for (Expr *expr : expr_list){
+          expr->printOn(std::cout);
+        }
         ERROR("Called function or procedure '" + name + "' was not defined.");
       }
       for (Expr* e : expr_list){
