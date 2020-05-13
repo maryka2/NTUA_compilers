@@ -241,3 +241,16 @@ Type type_procedure(bool is_forward)
    return result;
 }
 
+// only for predefined functions
+Type type_procedure(std::vector<Type> arg_types)
+{
+   Type result = (Type) malloc(sizeof(Type_tag));
+
+   result->kind = TYPE_procedure;
+   result->u.t_procedure.is_forward = false;
+   result->u.t_procedure.arg_types = arg_types;
+   for (Type *t : arg_types){
+     result->u.t_procedure.is_by_ref_arr.push_back(false);
+   }
+   return result;
+}

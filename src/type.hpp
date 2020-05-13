@@ -74,3 +74,4 @@ Type type_pointer(Type type);
 Type type_label();
 Type type_function(Type result_type, bool is_forward);
 Type type_procedure(bool is_forward);
+Type type_procedure(std::vector<Type> arg_types);

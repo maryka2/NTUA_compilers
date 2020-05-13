@@ -3,8 +3,7 @@
 #include <stdlib.h>
 #include "ast.hpp"
 #include "lexer.hpp"
-#include "predefined_functions"
-
+#define YYERROR_VERBOSE
 SymbolTable st;
 std::unordered_map<string, SymbolEntry*> globals;  // Global hash table
 %}
@@ -41,27 +40,15 @@ std::unordered_map<string, SymbolEntry*> globals;  // Global hash table
 %token T_true "true"
 %token T_var "var"
 %token T_while "while"
-%token T_eq "="
-%token T_gt ">"
-%token T_lt "<"
 %token T_ne "<>"
 %token T_ge ">="
 %token T_le "<="
-%token T_plus "+"
-%token T_minus "-"
-%token T_times "*"
-%token T_rdiv "/"
-%token T_dref "^"
-%token T_ref "@"
 %token T_assign ":="
 %token T_semicolon ";"
 %token T_dot "."
-%token T_lparen "("
 %token T_rparen ")"
 %token T_colon ":"
 %token T_comma ","
-%token T_lbracket "["
-%token T_rbracket "]"
 
 %nonassoc<op> "=" ">" "<" ">=" "<=" "<>"
 %left<op> "+" "-" "or"
@@ -71,13 +58,13 @@ std::unordered_map<string, SymbolEntry*> globals;  // Global hash table
 %nonassoc<op> "@"
 %nonassoc<op> "[" "]"
 
-%expect 2;
+%expect 1;
 
 %union{
 	int i;
 	double f;
 	char c;
-	char *str;
+	char str[80];
 	bool b;
 	Type type;
 	Expr *expr;
@@ -121,7 +108,7 @@ std::unordered_map<string, SymbolEntry*> globals;  // Global hash table
 
 %%
 
-program				: "program" T_id ";" body "."	{ define_predefined_functions(); $4->sem(); $4->printOn(std::cout); $$ = $4; }
+program				: "program" T_id ";" body "."	{ $4->sem(); $$ = $4; }
 				;
 
 body				: local_list block	{ $1->merge($2); $$ = $1; }
@@ -192,12 +179,11 @@ type				: "integer"				{ $$ = type_integer(); }
 				;
 
 block				: "begin" stmt_list "end"		{ $$ = $2; }
-				| "begin" "end"				{ $$ = new Block(); }
 				;
 
 
-stmt_list			: stmt					{ Block *block = new Block(); block->append_stmt($1); $$ = block; }
-				| stmt_list ";" stmt			{ $1->append_stmt($3); $$ = $1; }
+stmt_list			: /*nothing*/				{ $$ = new Block(); }
+				| stmt_list stmt ";"			{ $1->append_stmt($2); $$ = $1; }
 				;
 
 
