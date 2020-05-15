@@ -1,5 +1,6 @@
 program test;
 var counter : integer;
 begin
-  counter := 1 + 1
+  counter := 1;
+  counter := counter + 1
 end.

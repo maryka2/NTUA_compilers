@@ -1,0 +1,4 @@
+program test;
+begin
+writeInteger(1);
+end.

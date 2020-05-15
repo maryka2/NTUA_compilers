@@ -41,8 +41,17 @@ public:
     for (unordered_map<string, SymbolEntry>::iterator it = scopes.back().locals.begin(); it != scopes.back().locals.end(); it++) {
       // For every variable (SymbolEntry) of the top scope
       SymbolEntry e = it->second;
+      std::cout << "checking" << it->first << "\n";
       if (e.type->kind == TYPE_label && e.type->u.t_label.is_called && !e.type->u.t_label.is_defined) {
         std::cerr << ("Label '" + it->first + "' used but not defined.");
+        exit(1);
+      }
+      if (e.type->kind == TYPE_procedure && e.type->u.t_procedure.is_forward) {
+        std::cerr << ("Called procedure '" + it->first + "' has only been forward declared.");
+        exit(1);
+      }
+      if (e.type->kind == TYPE_function && e.type->u.t_function.is_forward) {
+        std::cerr << ("Called function '" + it->first + "' has only been forward declared.");
         exit(1);
       }
       globals[it->first] = (it->second).next;  // Make the global hash table point the next occurance of this variable name
@@ -69,3 +78,4 @@ private:
 };
 
 extern SymbolTable st; // The symbol table
+

@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include "ast.hpp"
 #include "lexer.hpp"
-#include "predefined_functions"
+#include "predefined_functions.hpp"
 
 SymbolTable st;
 std::unordered_map<string, SymbolEntry*> globals;  // Global hash table
@@ -121,7 +121,7 @@ std::unordered_map<string, SymbolEntry*> globals;  // Global hash table
 
 %%
 
-program				: "program" T_id ";" body "."	{ define_predefined_functions(); $4->sem(); $4->printOn(std::cout); $$ = $4; }
+program				: "program" T_id ";" body "."	{ define_predefined_functions(); std::cout<<"done with predefined\n"; $4->sem(); $4->printOn(std::cout); $$ = $4; std::cout<<"done with semantic.. ready to close scope\n"; st.closeScope(); }
 				;
 
 body				: local_list block	{ $1->merge($2); $$ = $1; }
@@ -236,24 +236,24 @@ rvalue				: T_intconst		{ $$ = new Intconst($1); }
 				| "(" rvalue ")"	{ $$ = $2; }
 				| "nil"			{ $$ = new Nil(); }
 				| call			{ $$ = $1; }
-				| "@" expr		{ $$ = new UnOp($1, $2); }
-			        | "not" expr   		{ $$ = new UnOp($1, $2); }
-			        | "+" expr   		{ $$ = new UnOp($1, $2); }
-			        | "-" expr   		{ $$ = new UnOp($1, $2); }
-			        | expr "+" expr  		{ $$ = new BinOp($1, $2, $3); }
-			        | expr "-" expr  		{ $$ = new BinOp($1, $2, $3); }
-			        | expr "*" expr  		{ $$ = new BinOp($1, $2, $3); }
-			        | expr "/" expr  		{ $$ = new BinOp($1, $2, $3); }
-			        | expr "div" expr  		{ $$ = new BinOp($1, $2, $3); }
-			        | expr "mod" expr  		{ $$ = new BinOp($1, $2, $3); }
-			        | expr "or" expr  		{ $$ = new BinOp($1, $2, $3); }
-			        | expr "and" expr  		{ $$ = new BinOp($1, $2, $3); }
-			        | expr "=" expr  		{ $$ = new BinOp($1, $2, $3); }
-			        | expr "<>" expr  		{ $$ = new BinOp($1, $2, $3); }
-			        | expr "<" expr  		{ $$ = new BinOp($1, $2, $3); }
-			        | expr "<=" expr  		{ $$ = new BinOp($1, $2, $3); }
-			        | expr ">" expr  		{ $$ = new BinOp($1, $2, $3); }
-			        | expr ">=" expr  		{ $$ = new BinOp($1, $2, $3); }
+				| "@" expr		{ $$ = new UnOp(std::string("@"), $2); }
+			        | "not" expr   		{ $$ = new UnOp(std::string("not"), $2); }
+			        | "+" expr   		{ $$ = new UnOp(std::string("+"), $2); }
+			        | "-" expr   		{ $$ = new UnOp(std::string("-"), $2); }
+			        | expr "+" expr  		{ $$ = new BinOp($1, std::string("+"), $3); }
+			        | expr "-" expr  		{ $$ = new BinOp($1, std::string("-"), $3); }
+			        | expr "*" expr  		{ $$ = new BinOp($1, std::string("*"), $3); }
+			        | expr "/" expr  		{ $$ = new BinOp($1, std::string("/"), $3); }
+			        | expr "div" expr  		{ $$ = new BinOp($1, std::string("div"), $3); }
+			        | expr "mod" expr  		{ $$ = new BinOp($1, std::string("mod"), $3); }
+			        | expr "or" expr  		{ $$ = new BinOp($1, std::string("or"), $3); }
+			        | expr "and" expr  		{ $$ = new BinOp($1, std::string("and"), $3); }
+			        | expr "=" expr  		{ $$ = new BinOp($1, std::string("="), $3); }
+			        | expr "<>" expr  		{ $$ = new BinOp($1, std::string("<>"), $3); }
+			        | expr "<" expr  		{ $$ = new BinOp($1, std::string("<"), $3); }
+			        | expr "<=" expr  		{ $$ = new BinOp($1, std::string("<="), $3); }
+			        | expr ">" expr  		{ $$ = new BinOp($1, std::string(">"), $3); }
+			        | expr ">=" expr  		{ $$ = new BinOp($1, std::string(">="), $3); }
 			        ;
 
 

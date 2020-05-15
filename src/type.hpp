@@ -30,6 +30,7 @@ struct Type_tag {
         } t_arrayII;
         struct {
           Type type;
+          bool is_null;
         } t_pointer;
         struct {
           std::vector<Type> arg_types;
@@ -63,6 +64,7 @@ void delete_type(Type t);
 bool equal_strings(Type t1, Type t2, Value v1, Value v2);
 bool is_string(Type t);
 bool equal_types(Type t1, Type t2);
+bool assignable_types(Type t1, Type t2);
 void print_type(Type t);
 Type type_integer();
 Type type_real();
@@ -71,7 +73,9 @@ Type type_char();
 Type type_arrayI(int dim, Type type);
 Type type_arrayII(Type type);
 Type type_pointer(Type type);
+Type type_pointer();
 Type type_label();
 Type type_function(Type result_type, bool is_forward);
 Type type_procedure(bool is_forward);
 Type type_procedure(std::vector<Type> arg_types);
+Type type_function(std::vector<Type> arg_types, Type result_type);

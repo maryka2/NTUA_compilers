@@ -20,34 +20,34 @@ extern std::unordered_map<string, SymbolEntry*> globals;
 
 inline std::ostream& operator<<(std::ostream &out, Type t) {
   if ( t->kind == TYPE_integer ) {
-    out << "integer";
+    out << "integer \n";
   }
   else if ( t->kind == TYPE_real ) {
-    out << "real";
+    out << "real \n";
   }
   else if ( t->kind == TYPE_boolean ){
-     out << "boolean";
+     out << "boolean \n";
    }
   else if ( t->kind == TYPE_char ){
-     out << "char";
+     out << "char \n";
    }
   else if ( t->kind == TYPE_arrayI ){
-     out << "arrayI";
+     out << "arrayI \n";
    }
   else if ( t->kind == TYPE_arrayII ){
-     out << "arrayII";
+     out << "arrayII \n";
    }
   else if ( t->kind == TYPE_pointer ){
-     out << "pointer";
+     out << "pointer \n";
   }
   else if (t->kind == TYPE_function) {
-    out << "function";
+    out << "function \n";
   }
   else if (t->kind == TYPE_procedure) {
-    out << "procedure";
+    out << "procedure \n";
   }
   else if (t->kind == TYPE_label) {
-    out << "label";
+    out << "label \n";
   }
   return out;
 }
@@ -136,7 +136,7 @@ public:
     st.insert(var, type);
   }
   void printOn(std::ostream &out) const override {
-    out << "Id(" << var << ")";
+    out << "Id(" << var << ")\n";
   }
   Value eval() override {
     return globals[var]->value;
@@ -192,6 +192,7 @@ public:
       out << *id << ' ';
     }
     print_type(type);
+    out << "\n";
   }
   Type get_formal_type() {
     return type;
@@ -274,6 +275,7 @@ public:
     for (Formal *f : formal_list){
       out << *f << " ";
     }
+    out << "\n";
   }
   void set_forward(){
     if (header_type->kind == TYPE_function){
@@ -366,6 +368,7 @@ public:
     else {
       out << *header << " ";
     }
+    out << "\n";
   }
   virtual void sem() override {
     if (local_type == 0) {
@@ -421,7 +424,7 @@ public:
       first = false;
       out << *s;
     }
-    out << ")";
+    out << ")\n";
   }
   virtual void sem() override {
     st.openScope();
@@ -449,7 +452,7 @@ public:
     delete body;
   }
   void printOn(std::ostream &out) const override {
-    out << "Local " << *header << " " << *body << " ";
+    out << "Local " << *header << " " << *body << "\n";
   }
   void sem() override {
     st.openScope();
@@ -469,7 +472,7 @@ public:
     delete expr;
   }
   void printOn(std::ostream &out) const override {
-    out << "Dereference " << *expr;
+    out << "Dereference " << *expr << "\n";
   }
   void sem() override {
     if (!expr->type_check(TYPE_pointer)){
@@ -491,7 +494,7 @@ public:
     delete expr;
   }
   void printOn(std::ostream &out) const override {
-    out << "Array " << *lvalue << " [" << *expr << "]";
+    out << "Array " << *lvalue << " [" << *expr << "]\n";
   }
   void sem() override {
     if (!expr->type_check(TYPE_integer)){
@@ -536,41 +539,38 @@ public:
   BinOp(Expr *l, string o, Expr *r): left(l), op(o), right(r) {}
   ~BinOp() { delete left; delete right; }
   void printOn(std::ostream &out) const override {
-    out << op << "(" << *left << ", " << *right << ")";
+    out << op << "(" << *left << ", " << *right << ")\n";
   }
   void sem() override {
     if (( left->type_check(TYPE_arrayI) ) || ( left->type_check(TYPE_arrayII) ) || ( right->type_check(TYPE_arrayI) ) || ( right->type_check(TYPE_arrayII) )) {
-      ERROR("BinOp operands have incompatible type for operation '" + op + "'");
+      ERROR("1 BinOp operands have incompatible type for operation '" + op + "'");
     }
-    if (( left->type_check(TYPE_pointer) ) && !( right->type_check(TYPE_pointer) )) {
-      ERROR("BinOp operands have incompatible type for operation '" + op + "'");
+    if ( left->type_check(TYPE_pointer) !=  right->type_check(TYPE_pointer) ) {
+      ERROR("2 BinOp operands have incompatible type for operation '" + op + "'");
     }
-    if (( left->type_check(TYPE_char) ) && !( right->type_check(TYPE_char) )) {
-      ERROR("BinOp operands have incompatible type for operation '" + op + "'");
+    if ( left->type_check(TYPE_char) != right->type_check(TYPE_char) ) {
+      ERROR("3 BinOp operands have incompatible type for operation '" + op + "'");
     }
-    if (( left->type_check(TYPE_boolean) ) && !( right->type_check(TYPE_boolean) )) {
-      ERROR("BinOp operands have incompatible type for operation '" + op + "'");
+    if ( left->type_check(TYPE_boolean) != right->type_check(TYPE_boolean) ) {
+      ERROR("4 BinOp operands have incompatible type for operation '" + op + "'");
     }
-    if ((( left->type_check(TYPE_integer) ) && !( right->type_check(TYPE_integer) )) || (( left->type_check(TYPE_integer) ) && !( right->type_check(TYPE_real) ))) {
-      ERROR("BinOp operands have incompatible type for operation '" + op + "'");
-    }
-    if ((( left->type_check(TYPE_real) ) && !( right->type_check(TYPE_integer) )) || (( left->type_check(TYPE_real) ) && !( right->type_check(TYPE_real) ))) {
-      ERROR("BinOp operands have incompatible type for operation '" + op + "'");
+    if ( (left->type_check(TYPE_integer) || left->type_check(TYPE_real)) != (right->type_check(TYPE_integer) || right->type_check(TYPE_real) )){
+      ERROR("5 BinOp operands have incompatible type for operation '" + op + "'");
     }
     if (op == "+" || op == "-" || op == "*") {
       if (( left->type_check(TYPE_integer) ) && ( right->type_check(TYPE_integer) )) {
-        type->kind = TYPE_integer;
+        type = type_integer();
       }
       else if (( left->type_check(TYPE_real) ) || ( right->type_check(TYPE_real) )) {
-        type->kind = TYPE_real;
+        type = type_real();
       }
       else {
-        ERROR("BinOp operands have incompatible type for operation '" + op + "'");
+        ERROR("6 BinOp operands have incompatible type for operation '" + op + "'");
       }
     }
     else if ( op == "/" ) {
       if (( left->type_check(TYPE_integer) ) || ( left->type_check(TYPE_real) )) {
-        type->kind = TYPE_real;
+        type = type_real();
       }
       else {
         ERROR("BinOp operands have incompatible type for operation '" + op + "'");
@@ -578,18 +578,18 @@ public:
     }
     else if ( op == "div" ||  op == "mod" ) {
       if (( left->type_check(TYPE_integer) ) && ( right->type_check(TYPE_integer) )) {
-        type->kind = TYPE_integer;
+        type = type_integer();
       }
       else {
         ERROR("BinOp operands have incompatible type for operation '" + op + "'");
       }
     }
     else if ( op == "=" ||  op == "<>") {
-      type->kind = TYPE_boolean;
+      type = type_boolean();
     }
     else if ( op == "or" ||  op == "and") {
       if (( left->type_check(TYPE_boolean) )) {
-        type->kind = TYPE_boolean;
+        type = type_boolean();
       }
       else {
         ERROR("BinOp operands have incompatible type for operation '" + op + "'");
@@ -597,7 +597,7 @@ public:
     }
     else if ( op == "<" ||  op == ">" ||  op == ">=" ||  op == "<=" ) {
       if (( left->type_check(TYPE_integer) ) || ( left->type_check(TYPE_real) )) {
-        type->kind = TYPE_boolean;
+        type = type_boolean();
       }
       else {
         ERROR("BinOp operands have incompatible type for operation '" + op + "'");
@@ -837,7 +837,7 @@ public:
     delete right;
   }
   void printOn(std::ostream &out) const override {
-    out << op << "(" << *right << ")";
+    out << op << "(" << *right << ")\n";
   }
   void sem() override {
     if ( op == "+" ||  op == "-" ) {
@@ -893,7 +893,7 @@ class Nil: public Rvalue {
 public:
   Nil() {}
   void printOn(std::ostream &out) const override {
-    out << "Nil";
+    out << "Nil\n";
   }
   Value eval() override {
     Value value;
@@ -901,7 +901,7 @@ public:
     return value;
   }
   void sem() override {
-    type->kind=TYPE_pointer;
+    type = type_pointer();
   }
 };
 
@@ -915,7 +915,7 @@ public:
     // This is intentionally left empty
   }
   void printOn(std::ostream &out) const override {
-    out << "Charconst(" << char_const << ")";
+    out << "Charconst(" << char_const << ")\n";
   }
   Value eval() override {
     Value value;
@@ -923,7 +923,7 @@ public:
     return value;
   }
   void sem() override {
-    type->kind = TYPE_char;
+    type = type_char();
   }
 };
 
@@ -937,7 +937,7 @@ public:
     // This is intentionally left empty
   }
   void printOn(std::ostream &out) const override {
-    out << "Realconst(" << num << ")";
+    out << "Realconst(" << num << ")\n";
   }
   Value eval() override {
     Value value;
@@ -945,7 +945,7 @@ public:
     return value;
   }
   void sem() override {
-    type->kind=TYPE_real;
+    type = type_real();
   }
 };
 
@@ -959,7 +959,7 @@ public:
     // This is intentionally left empty
   }
   void printOn(std::ostream &out) const override {
-    out << "Bool(" << boolean << ")";
+    out << "Bool(" << boolean << ")\n";
   }
   Value eval() override {
     Value value;
@@ -967,7 +967,7 @@ public:
     return value;
   }
   void sem() override {
-    type->kind=TYPE_boolean;
+    type = type_boolean();
   }
 };
 
@@ -981,7 +981,7 @@ public:
     // This is intentionally left empty
   }
   void printOn(std::ostream &out) const override {
-    out << "Intconst(" << num << ")";
+    out << "Intconst(" << num << ")\n";
   }
   Value eval() override {
     Value value;
@@ -989,7 +989,7 @@ public:
     return value;
   }
   void sem() override {
-    type->kind=TYPE_integer;
+    type = type_integer();
   }
 };
 
@@ -999,7 +999,7 @@ public:
   EmptyStmt() {}
   ~EmptyStmt() {}
   void printOn(std::ostream &out) const override {
-    out << "EmptyStmt";
+    out << "EmptyStmt\n";
   }
   void sem() override {
     // This is intentionally left empty.
@@ -1018,7 +1018,7 @@ public:
     delete stmt;
   }
   void printOn(std::ostream &out) const override {
-    out << "While(" << *expr << ", " << *stmt << ")";
+    out << "While(" << *expr << ", " << *stmt << ")\n";
   }
   void sem() override {
     if (!expr->type_check(TYPE_boolean)){
@@ -1050,7 +1050,7 @@ public:
   void printOn(std::ostream &out) const override {
     out << "If(" << *cond << ", " << *stmt1;
     if (stmt2 != nullptr) out << ", " << *stmt2;
-    out << ")";
+    out << ")\n";
   }
   void sem() override {
     if (!cond->type_check(TYPE_boolean)){
@@ -1092,6 +1092,7 @@ class Call: public Stmt, public Rvalue {
       for (Expr *expr : expr_list){
         out << *expr << ' ';
       }
+      out << "\n";
     }
     void is_statement() {
       is_stmt = true;
@@ -1100,26 +1101,20 @@ class Call: public Stmt, public Rvalue {
       // first check if in SymbolTable
       SymbolEntry *e = st.lookup(name);
       if (e == nullptr) {
-	for (Expr *expr : expr_list){
-          expr->printOn(std::cout);
-        }
         ERROR("Called function or procedure '" + name + "' was not defined.");
       }
-      for (Expr* e : expr_list){
-        e->sem();
+      for (Expr* ex : expr_list){
+        ex->sem();
       }
       if (e->type->kind == TYPE_procedure){
         if (!is_stmt){
           ERROR("Procedure called as rvalue.");
         }
-        if (e->type->u.t_procedure.is_forward) {
-          ERROR("Called procedure '" + name + "' has only been forward declared.");
-        }
         if (expr_list.size() != e->type->u.t_procedure.arg_types.size()) {
           ERROR("Different amount of arguments given for procedure '" + name + "'.");
         }
         for (unsigned int arg_idx = 0; arg_idx < expr_list.size(); ++arg_idx) {
-          if (!equal_types(expr_list[arg_idx]->get_expr_type(), e->type->u.t_procedure.arg_types[arg_idx])) {
+          if (!assignable_types(expr_list[arg_idx]->get_expr_type(), e->type->u.t_procedure.arg_types[arg_idx])) {
             ERROR("Not right type of argument in call of procedure '" + name + "'.");
           }
         }
@@ -1128,14 +1123,11 @@ class Call: public Stmt, public Rvalue {
         if (is_stmt){
           ERROR("Function called as a statement.");
         }
-        if (e->type->u.t_function.is_forward) {
-          ERROR("Called function '" + name + "' has only been forward declared.");
-        }
         if (expr_list.size() != e->type->u.t_function.arg_types.size()) {
           ERROR("Different amount of arguments given for function '" + name + "'.");
         }
         for (unsigned int arg_idx = 0; arg_idx < expr_list.size(); ++arg_idx) {
-          if (!equal_types(expr_list[arg_idx]->get_expr_type(), e->type->u.t_function.arg_types[arg_idx])) {
+          if (!assignable_types(expr_list[arg_idx]->get_expr_type(), e->type->u.t_function.arg_types[arg_idx])) {
             ERROR("Not right type of argument in call of function '" + name + "'.");
           }
         }
@@ -1159,18 +1151,14 @@ public:
     delete expr;
   }
   void printOn(std::ostream &out) const override {
-    out << "Assignment " << *lvalue << " = " << *expr;
+    out << "Assignment " << *lvalue << " = " << *expr << "\n";
   }
   void sem() override{
     lvalue->sem();
     expr->sem();
     Type lvalue_type = lvalue->get_expr_type();
     Type expr_type = expr->get_expr_type();
-    if (!equal_types(lvalue_type, expr_type)
-    && !(lvalue_type->kind == TYPE_integer && expr_type->kind == TYPE_real)
-    && !(lvalue_type->kind == TYPE_arrayI && expr_type->kind == TYPE_arrayII && equal_types(lvalue_type->u.t_arrayI.type, expr_type->u.t_arrayII.type))
-    && !(lvalue_type->kind == TYPE_real && expr_type->kind == TYPE_integer)
-    && !(lvalue_type->kind == TYPE_arrayII && expr_type->kind == TYPE_arrayI && equal_types(lvalue_type->u.t_arrayII.type, expr_type->u.t_arrayI.type))){
+    if (!assignable_types(lvalue_type, expr_type)){
       ERROR("Assignement of wrong type.");
     }
   }
@@ -1189,6 +1177,7 @@ public:
   void printOn(std::ostream &out) const override {
     out << "Label '" << label_name << "' with statement ";
     stmt->printOn(out);
+    out << "\n";
   }
   void sem() override {
     SymbolEntry *e = st.lookup(label_name);
@@ -1213,7 +1202,7 @@ public:
     // this is intentionally left empty
   }
   void printOn(std::ostream &out) const override {
-    out << "Goto '" << label_name << "'";
+    out << "Goto '" << label_name << "'\n";
   }
   void sem() override {
     SymbolEntry *e = st.lookup(label_name);
@@ -1234,7 +1223,7 @@ public:
     // this is intentionally left empty
   }
   void printOn(std::ostream &out) const override {
-    out << "Return";
+    out << "Return\n";
   }
   void sem() override {
     // this is intentionally left empty
@@ -1259,7 +1248,7 @@ public:
     if (is_array) {
       out << " [" << *expr << "]";
     }
-    out << " " << *lvalue;
+    out << " " << *lvalue << "\n";
   }
   void sem() override {
     if (!lvalue->type_check(TYPE_pointer)) {
@@ -1292,7 +1281,7 @@ public:
     if (is_array) {
       out << " []";
     }
-    out << " " << *lvalue;
+    out << " " << *lvalue << "\n";
   }
   void sem() override {
     if (!lvalue->type_check(TYPE_pointer)) {
