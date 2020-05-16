@@ -285,7 +285,8 @@ public:
       header_type->u.t_procedure.is_forward = true;
     }
   }
-  void sem() override {
+  void sem_outter_scope() {
+    std::cout << "Start header sem_outer_scope " << name << "\n" << std::flush;
     // first check if in SymbolTable
     SymbolEntry *e = st.lookup(name);
     if (e != nullptr){  //already declared
@@ -317,6 +318,10 @@ public:
     else{
       st.insert(name, header_type);
     }
+    std::cout << "End header sem_outer_scope " << name << "\n" << std::flush;
+  }
+  void sem() override {
+    std::cout << "Start header sem " << name << "\n" << std::flush;
     if ((header_type->kind == TYPE_procedure && !header_type->u.t_procedure.is_forward) || (header_type->kind == TYPE_function && !header_type->u.t_function.is_forward)) {
       if (header_type->kind == TYPE_function){
         st.insert("result", header_type->u.t_function.result_type);
@@ -325,6 +330,7 @@ public:
         f->sem();
       }
     }
+    std::cout << "End header sem " << name << "\n" << std::flush;
   }
 };
 
@@ -385,9 +391,7 @@ public:
       }
     }
     else {
-      st.openScope();
-      header->sem();
-      st.closeScope();
+      header->sem_outter_scope();
     }
   }
 };
@@ -455,6 +459,7 @@ public:
     out << "Local " << *header << " " << *body << "\n";
   }
   void sem() override {
+    header->sem_outter_scope();
     st.openScope();
     header->sem();
     body->sem();
@@ -1069,74 +1074,76 @@ public:
 
 
 class Call: public Stmt, public Rvalue {
-  private:
-    string name;
-    std::vector<Expr*> expr_list;
-    bool is_stmt=false;
-  public:
-    Call(string n) : name(n) {}
-    Call(string n, Expr_vector *ev) : name(n) {
-      expr_list = ev->get_vector();
+private:
+  string name;
+  std::vector<Expr*> expr_list;
+  bool is_stmt=false;
+public:
+  Call(string n) : name(n) {}
+  Call(string n, Expr_vector *ev) : name(n) {
+    expr_list = ev->get_vector();
+  }
+  ~Call() {
+    for (Expr *e : expr_list) {
+      delete e;
     }
-    ~Call() {
-      for (Expr *e : expr_list) {
-        delete e;
-      }
-      expr_list.clear();
+    expr_list.clear();
+  }
+  void printOn(std::ostream &out) const override{
+    out << "Call of procedure or function '" << name << "'";
+    if (!expr_list.empty()){
+      out << " with arguments ";
     }
-    void printOn(std::ostream &out) const override{
-      out << "Call of procedure or function '" << name << "'";
-      if (!expr_list.empty()){
-        out << " with arguments ";
-      }
-      for (Expr *expr : expr_list){
-        out << *expr << ' ';
-      }
-      out << "\n";
+    for (Expr *expr : expr_list){
+      out << *expr << ' ';
     }
-    void is_statement() {
-      is_stmt = true;
+    out << "\n";
+  }
+  void is_statement() {
+    is_stmt = true;
+  }
+  void sem() override {
+    std::cout << "Start call sem " << name << "\n" << std::flush;
+    // first check if in SymbolTable
+    SymbolEntry *e = st.lookup(name);
+    if (e == nullptr) {
+      ERROR("Called function or procedure '" + name + "' was not defined.");
     }
-    void sem() override {
-      // first check if in SymbolTable
-      SymbolEntry *e = st.lookup(name);
-      if (e == nullptr) {
-        ERROR("Called function or procedure '" + name + "' was not defined.");
+    for (Expr* ex : expr_list){
+      ex->sem();
+    }
+    if (e->type->kind == TYPE_procedure){
+      if (!is_stmt){
+        ERROR("Procedure called as rvalue.");
       }
-      for (Expr* ex : expr_list){
-        ex->sem();
+      if (expr_list.size() != e->type->u.t_procedure.arg_types.size()) {
+        ERROR("Different amount of arguments given for procedure '" + name + "'.");
       }
-      if (e->type->kind == TYPE_procedure){
-        if (!is_stmt){
-          ERROR("Procedure called as rvalue.");
+      for (unsigned int arg_idx = 0; arg_idx < expr_list.size(); ++arg_idx) {
+        if (!assignable_types(expr_list[arg_idx]->get_expr_type(), e->type->u.t_procedure.arg_types[arg_idx])) {
+          ERROR("Not right type of argument in call of procedure '" + name + "'.");
         }
-        if (expr_list.size() != e->type->u.t_procedure.arg_types.size()) {
-          ERROR("Different amount of arguments given for procedure '" + name + "'.");
-        }
-        for (unsigned int arg_idx = 0; arg_idx < expr_list.size(); ++arg_idx) {
-          if (!assignable_types(expr_list[arg_idx]->get_expr_type(), e->type->u.t_procedure.arg_types[arg_idx])) {
-            ERROR("Not right type of argument in call of procedure '" + name + "'.");
-          }
-        }
-      }
-      else if (e->type->kind == TYPE_function){
-        if (is_stmt){
-          ERROR("Function called as a statement.");
-        }
-        if (expr_list.size() != e->type->u.t_function.arg_types.size()) {
-          ERROR("Different amount of arguments given for function '" + name + "'.");
-        }
-        for (unsigned int arg_idx = 0; arg_idx < expr_list.size(); ++arg_idx) {
-          if (!assignable_types(expr_list[arg_idx]->get_expr_type(), e->type->u.t_function.arg_types[arg_idx])) {
-            ERROR("Not right type of argument in call of function '" + name + "'.");
-          }
-        }
-        type = e->type->u.t_function.result_type;
-      }
-      else {
-        ERROR("Call of '" + name + "' with type different than function or procedure.");
       }
     }
+    else if (e->type->kind == TYPE_function){
+      if (is_stmt){
+        ERROR("Function called as a statement.");
+      }
+      if (expr_list.size() != e->type->u.t_function.arg_types.size()) {
+        ERROR("Different amount of arguments given for function '" + name + "'.");
+      }
+      for (unsigned int arg_idx = 0; arg_idx < expr_list.size(); ++arg_idx) {
+        if (!assignable_types(expr_list[arg_idx]->get_expr_type(), e->type->u.t_function.arg_types[arg_idx])) {
+          ERROR("Not right type of argument in call of function '" + name + "'.");
+        }
+      }
+      type = e->type->u.t_function.result_type;
+    }
+    else {
+      ERROR("Call of '" + name + "' with type different than function or procedure.");
+    }
+    std::cout << "End call sem " << name << "\n" << std::flush;
+  }
 };
 
 

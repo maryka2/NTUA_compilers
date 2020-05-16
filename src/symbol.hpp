@@ -20,7 +20,7 @@ class Scope {
 public:
   unordered_map<string, SymbolEntry> locals;  // Hash-map matching variable names to SymbolEntries
 
-  Scope() : locals() {}  // Initializer: hash map locals is empty
+  Scope() {}  // Initializer: hash map locals is empty
   SymbolEntry *insert(string c, Type t, SymbolEntry *n) {
     if (locals.find(c) != locals.end()) {  // Check if there is already a variable with name equal to c in this scope
       // If we are here there is already a variable with the name with that name
@@ -35,10 +35,10 @@ public:
 class SymbolTable {
 public:
   void openScope() {
-   scopes.push_back(Scope());  // Push new scope on the top of data stack
+   scopes.push_back(new Scope());  // Push new scope on the top of data stack
   }
   void closeScope() {  // Removes top scope
-    for (unordered_map<string, SymbolEntry>::iterator it = scopes.back().locals.begin(); it != scopes.back().locals.end(); it++) {
+    for (unordered_map<string, SymbolEntry>::iterator it = scopes.back()->locals.begin(); it != scopes.back()->locals.end(); it++) {
       // For every variable (SymbolEntry) of the top scope
       SymbolEntry e = it->second;
       std::cout << "checking" << it->first << "\n";
@@ -68,13 +68,13 @@ public:
     SymbolEntry *n;  // Pointer to next variable with the same name
     if (globals.find(c) == globals.end()) n = nullptr;  // If it doesn't exist point to nullptr
     else n = globals[c];  // else point to it
-    globals[c] = scopes.back().insert(c, t, n); // Insert SymbolEntry to top Scope
+    globals[c] = scopes.back()->insert(c, t, n); // Insert SymbolEntry to top Scope
   }
   int getSizeOfCurrentScope() {
-    return scopes.back().locals.size();
+    return scopes.back()->locals.size();
   }
 private:
-  std::vector<Scope> scopes;  // The data stack
+  std::vector<Scope*> scopes;  // The data stack
 };
 
 extern SymbolTable st; // The symbol table

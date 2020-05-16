@@ -287,11 +287,12 @@ Type type_procedure(std::vector<Type> arg_types)
 Type type_function(std::vector<Type> arg_types, Type result_type)
 {
    Type result = (Type) malloc(sizeof(Type_tag));
-
+   
    result->kind = TYPE_function;
    result->u.t_function.is_forward = false;
    result->u.t_function.result_type = result_type;
    result->u.t_function.arg_types = arg_types;
+
    for (Type t : arg_types){
      result->u.t_function.is_by_ref_arr.push_back(false);
    }
