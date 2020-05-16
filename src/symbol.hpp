@@ -41,7 +41,6 @@ public:
     for (unordered_map<string, SymbolEntry>::iterator it = scopes.back()->locals.begin(); it != scopes.back()->locals.end(); it++) {
       // For every variable (SymbolEntry) of the top scope
       SymbolEntry e = it->second;
-      std::cout << "checking" << it->first << "\n";
       if (e.type->kind == TYPE_label && e.type->u.t_label.is_called && !e.type->u.t_label.is_defined) {
         std::cerr << ("Label '" + it->first + "' used but not defined.");
         exit(1);
@@ -54,7 +53,12 @@ public:
         std::cerr << ("Called function '" + it->first + "' has only been forward declared.");
         exit(1);
       }
-      globals[it->first] = (it->second).next;  // Make the global hash table point the next occurance of this variable name
+      if (it->second.next == nullptr){
+        globals.erase(it->first);
+      }
+      else{
+        globals[it->first] = it->second.next;  // Make the global hash table point the next occurance of this variable name
+      }
     }
     scopes.pop_back();  // Remove top scope
   };

@@ -286,7 +286,6 @@ public:
     }
   }
   void sem_outter_scope() {
-    std::cout << "Start header sem_outer_scope " << name << "\n" << std::flush;
     // first check if in SymbolTable
     SymbolEntry *e = st.lookup(name);
     if (e != nullptr){  //already declared
@@ -318,10 +317,8 @@ public:
     else{
       st.insert(name, header_type);
     }
-    std::cout << "End header sem_outer_scope " << name << "\n" << std::flush;
   }
   void sem() override {
-    std::cout << "Start header sem " << name << "\n" << std::flush;
     if ((header_type->kind == TYPE_procedure && !header_type->u.t_procedure.is_forward) || (header_type->kind == TYPE_function && !header_type->u.t_function.is_forward)) {
       if (header_type->kind == TYPE_function){
         st.insert("result", header_type->u.t_function.result_type);
@@ -330,7 +327,6 @@ public:
         f->sem();
       }
     }
-    std::cout << "End header sem " << name << "\n" << std::flush;
   }
 };
 
@@ -402,6 +398,7 @@ private:
   std::vector<Local *> local_list;
   std::vector<Stmt *> stmt_list;
   int size;
+  bool is_program = false;
 public:
   Block(): local_list(), stmt_list(), size(0) {}
   ~Block() {
@@ -430,8 +427,68 @@ public:
     }
     out << ")\n";
   }
+  void block_is_program(){
+    is_program = true;
+  }
   virtual void sem() override {
     st.openScope();
+    if (is_program){
+      Id *id = new Id("n");
+      id->set_type(type_integer());
+      (new Header("writeInteger",  new Formal_vector(new Formal(new Id_vector(id), type_integer())) ))->sem_outter_scope();
+      id = new Id("b");
+      id->set_type(type_boolean());
+      (new Header("writeBoolean",  new Formal_vector(new Formal(new Id_vector(id), type_boolean())) ))->sem_outter_scope();
+      id = new Id("c");
+      id->set_type(type_char());
+      (new Header("writeChar",  new Formal_vector(new Formal(new Id_vector(id), type_char())) ))->sem_outter_scope();
+      id = new Id("r");
+      id->set_type(type_real());
+      (new Header("writeReal",  new Formal_vector(new Formal(new Id_vector(id), type_real())) ))->sem_outter_scope();
+      id = new Id("s");
+      id->set_type(type_arrayII(type_char()));
+      (new Header("writeString",  new Formal_vector(new Formal("var", new Id_vector(id), type_arrayII(type_char()))) ))->sem_outter_scope();
+      (new Header("readInteger",  type_integer() ))->sem_outter_scope();
+      (new Header("readBoolean",  type_boolean() ))->sem_outter_scope();
+      (new Header("readChar",  type_char() ))->sem_outter_scope();
+      (new Header("readReal",  type_real() ))->sem_outter_scope(); 
+      Id *id2 = new Id("s");
+      id2->set_type(type_arrayII(type_char()));
+      Formal_vector *fv = new Formal_vector(new Formal("var", new Id_vector(id2), type_arrayII(type_char())));    
+      Id *id1 = new Id("size");
+      id1->set_type(type_integer());
+      fv->append_formal(new Formal( new Id_vector(id1), type_integer()));
+      (new Header("readString", fv))->sem_outter_scope();
+      id = new Id("n");
+      id->set_type(type_integer());
+      (new Header("abs",  new Formal_vector(new Formal(new Id_vector(id), type_integer())), type_integer() ))->sem_outter_scope();
+      id = new Id("r");
+      id->set_type(type_real());
+      (new Header("fabs",  new Formal_vector(new Formal(new Id_vector(id), type_real())), type_real() ))->sem_outter_scope();
+      id = new Id("r");
+      id->set_type(type_real());
+      (new Header("sqrt",  new Formal_vector(new Formal(new Id_vector(id), type_real())), type_real() ))->sem_outter_scope();
+      id = new Id("r");
+      id->set_type(type_real());
+      (new Header("sin",  new Formal_vector(new Formal(new Id_vector(id), type_real())), type_real() ))->sem_outter_scope();
+      id = new Id("r");
+      id->set_type(type_real());
+      (new Header("cos",  new Formal_vector(new Formal(new Id_vector(id), type_real())), type_real() ))->sem_outter_scope();
+      id = new Id("r");
+      id->set_type(type_real());
+      (new Header("tan",  new Formal_vector(new Formal(new Id_vector(id), type_real())), type_real() ))->sem_outter_scope();
+      id = new Id("r");
+      id->set_type(type_real());
+      (new Header("arctan",  new Formal_vector(new Formal(new Id_vector(id), type_real())), type_real() ))->sem_outter_scope();
+      id = new Id("r");
+      id->set_type(type_real());
+      (new Header("exp",  new Formal_vector(new Formal(new Id_vector(id), type_real())), type_real() ))->sem_outter_scope();
+      id = new Id("r");
+      id->set_type(type_real());
+      (new Header("ln",  new Formal_vector(new Formal(new Id_vector(id), type_real())), type_real() ))->sem_outter_scope();
+      (new Header("pi",  type_real() ))->sem_outter_scope();
+
+    }
     for (Local *l : local_list) l->sem();
     for (Stmt *s : stmt_list) s->sem();
     size = st.getSizeOfCurrentScope();
@@ -1103,7 +1160,6 @@ public:
     is_stmt = true;
   }
   void sem() override {
-    std::cout << "Start call sem " << name << "\n" << std::flush;
     // first check if in SymbolTable
     SymbolEntry *e = st.lookup(name);
     if (e == nullptr) {
@@ -1142,7 +1198,6 @@ public:
     else {
       ERROR("Call of '" + name + "' with type different than function or procedure.");
     }
-    std::cout << "End call sem " << name << "\n" << std::flush;
   }
 };
 
