@@ -7,6 +7,17 @@
 #include "symbol.hpp"
 #include "type.hpp"
 
+#include <llvm/IR/IRBuilder.h>
+#include <llvm/IR/LegacyPassManager.h>
+#include <llvm/IR/Module.h>
+#include <llvm/IR/Value.h>
+#include <llvm/IR/Verifier.h>
+#include <llvm/Support/raw_ostream.h>
+#include <llvm/Transforms/Scalar.h>
+//#include <llvm/Transforms/Scalar/GVN.h>
+
+using namespace llvm;
+
 #define ERROR(msg) { std::cerr << "ERROR: " << msg << "\n"; exit(1); }
 
 /*void ERROR (const string msg)

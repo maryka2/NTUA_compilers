@@ -4,6 +4,20 @@
 #include "ast.hpp"
 #include "lexer.hpp"
 
+LLVMContext AST::TheContext;
+IRBuilder<> AST::Builder(TheContext);
+std::unique_ptr<Module> AST::TheModule;
+std::unique_ptr<legacy::FunctionPassManager> AST::TheFPM;
+
+GlobalVariable *AST::TheVars;
+GlobalVariable *AST::TheNL;
+Function *AST::TheWriteInteger;
+Function *AST::TheWriteString;
+
+Type *AST::i8 = IntegerType::get(TheContext, 8);
+Type *AST::i32 = IntegerType::get(TheContext, 32);
+Type *AST::i64 = IntegerType::get(TheContext, 64);
+
 SymbolTable st;
 std::unordered_map<string, SymbolEntry*> globals;  // Global hash table
 
