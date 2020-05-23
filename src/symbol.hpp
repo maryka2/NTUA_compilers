@@ -6,11 +6,11 @@ using namespace std;
 
 // SymbolEntry is a small box in the data stack
 struct SymbolEntry {
-  Type type;  // Variable's type
+  Types type;  // Variable's type
   Value value;
   SymbolEntry *next;  // A pointer to the next SymbolEntry with the same name, or NULL if such a variable doesn't exist
   SymbolEntry() {}
-  SymbolEntry(Type t, SymbolEntry *n) : type(t), next(n) {}  // Initializer
+  SymbolEntry(Types t, SymbolEntry *n) : type(t), next(n) {}  // Initializer
 };
 
 extern std::unordered_map<string, SymbolEntry*> globals;
@@ -21,7 +21,7 @@ public:
   unordered_map<string, SymbolEntry> locals;  // Hash-map matching variable names to SymbolEntries
 
   Scope() {}  // Initializer: hash map locals is empty
-  SymbolEntry *insert(string c, Type t, SymbolEntry *n) {
+  SymbolEntry *insert(string c, Types t, SymbolEntry *n) {
     if (locals.find(c) != locals.end()) {  // Check if there is already a variable with name equal to c in this scope
       // If we are here there is already a variable with the name with that name
       std::cerr << ("Duplicate variable " + c);  // Print error message
@@ -68,7 +68,7 @@ public:
      }
       return globals[c];  // If variable exists return pointer to its SymbolEntry
   }
-  void insert(string c, Type t) {
+  void insert(string c, Types t) {
     SymbolEntry *n;  // Pointer to next variable with the same name
     if (globals.find(c) == globals.end()) n = nullptr;  // If it doesn't exist point to nullptr
     else n = globals[c];  // else point to it
@@ -82,4 +82,3 @@ private:
 };
 
 extern SymbolTable st; // The symbol table
-

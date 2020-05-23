@@ -29,7 +29,7 @@ using namespace llvm;
 extern std::unordered_map<string, SymbolEntry*> globals;
 
 
-inline std::ostream& operator<<(std::ostream &out, Type t) {
+inline std::ostream& operator<<(std::ostream &out, Types t) {
   if ( t->kind == TYPE_integer ) {
     out << "integer \n";
   }
@@ -84,7 +84,7 @@ class Stmt: public AST {
 
 class Expr: public AST {
 protected:
-  Type type;
+  Types type;
 private:
   bool is_sem_called = false;
 public:
@@ -100,7 +100,7 @@ public:
     value.integer_value = 0;
     return value;
   }
-  Type get_expr_type() {
+  Types get_expr_type() {
     return type;
   }
 };
@@ -140,7 +140,7 @@ public:
   ~Id() {
     //this is intentionally left empty
   }
-  void set_type(Type t) {
+  void set_type(Types t) {
     type = t;
   }
   void insertIntoCurrentScope() {
@@ -180,14 +180,14 @@ public:
 class Formal: public AST {
 private:
   std::vector<Id*> var_name_list;
-  Type type;
+  Types type;
   bool is_by_ref;
 public:
   Formal() {}
-  Formal(string var_str, Id_vector *vnv, Type t) : type(t), is_by_ref(true){
+  Formal(string var_str, Id_vector *vnv, Types t) : type(t), is_by_ref(true){
     var_name_list = vnv->get_vector();
   }
-  Formal(Id_vector *vnv, Type t) : type(t), is_by_ref(false){
+  Formal(Id_vector *vnv, Types t) : type(t), is_by_ref(false){
     var_name_list = vnv->get_vector();
   }
   ~Formal() {
@@ -205,7 +205,7 @@ public:
     print_type(type);
     out << "\n";
   }
-  Type get_formal_type() {
+  Types get_formal_type() {
     return type;
   }
   bool get_is_by_ref() {
@@ -237,7 +237,7 @@ public:
 
 class Header: public AST {
 private:
-  Type header_type;
+  Types header_type;
   string name;
   std::vector<Formal *> formal_list;
 public:
@@ -251,7 +251,7 @@ public:
     }
   }
   // Function
-  Header(string n, Formal_vector *fv, Type rt) : name(n) {
+  Header(string n, Formal_vector *fv, Types rt) : name(n) {
     header_type = type_function(rt, false);
     formal_list = fv->get_vector();
     for (Formal *f: formal_list){
@@ -264,7 +264,7 @@ public:
     header_type = type_procedure(false);
   }
   // Function
-  Header(string n, Type rt) : name(n) {
+  Header(string n, Types rt) : name(n) {
     header_type = type_function(rt, false);
   }
   ~Header() {
@@ -462,10 +462,10 @@ public:
       (new Header("readInteger",  type_integer() ))->sem_outter_scope();
       (new Header("readBoolean",  type_boolean() ))->sem_outter_scope();
       (new Header("readChar",  type_char() ))->sem_outter_scope();
-      (new Header("readReal",  type_real() ))->sem_outter_scope(); 
+      (new Header("readReal",  type_real() ))->sem_outter_scope();
       Id *id2 = new Id("s");
       id2->set_type(type_arrayII(type_char()));
-      Formal_vector *fv = new Formal_vector(new Formal("var", new Id_vector(id2), type_arrayII(type_char())));    
+      Formal_vector *fv = new Formal_vector(new Formal("var", new Id_vector(id2), type_arrayII(type_char())));
       Id *id1 = new Id("size");
       id1->set_type(type_integer());
       fv->append_formal(new Formal( new Id_vector(id1), type_integer()));
@@ -1229,8 +1229,8 @@ public:
   void sem() override{
     lvalue->sem();
     expr->sem();
-    Type lvalue_type = lvalue->get_expr_type();
-    Type expr_type = expr->get_expr_type();
+    Types lvalue_type = lvalue->get_expr_type();
+    Types expr_type = expr->get_expr_type();
     if (!assignable_types(lvalue_type, expr_type)){
       ERROR("Assignement of wrong type.");
     }
@@ -1365,4 +1365,3 @@ public:
     }
   }
 };
-
