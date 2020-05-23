@@ -14,9 +14,9 @@ GlobalVariable *AST::TheNL;
 Function *AST::TheWriteInteger;
 Function *AST::TheWriteString;
 
-Types *AST::i8 = IntegerTypes::get(TheContext, 8);
-Types *AST::i32 = IntegerTypes::get(TheContext, 32);
-Types *AST::i64 = IntegerTypes::get(TheContext, 64);
+Type *AST::i8 = IntegerType::get(TheContext, 8);
+Type *AST::i32 = IntegerType::get(TheContext, 32);
+Type *AST::i64 = IntegerType::get(TheContext, 64);
 
 SymbolTable st;
 std::unordered_map<string, SymbolEntry*> globals;  // Global hash table
