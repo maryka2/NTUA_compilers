@@ -95,11 +95,11 @@ public:
     }
     return (type->kind == t);
   }
-  virtual Value eval() {
-    Value value;
-    value.integer_value = 0;
-    return value;
-  }
+  // virtual Value eval() {
+  //   Value value;
+  //   value.integer_value = 0;
+  //   return value;
+  // }
   Types get_expr_type() {
     return type;
   }
@@ -149,9 +149,9 @@ public:
   void printOn(std::ostream &out) const override {
     out << "Id(" << var << ")\n";
   }
-  Value eval() override {
-    return globals[var]->value;
-  }
+  // Value eval() override {
+  //   return globals[var]->value;
+  // }
   void sem() override {
     SymbolEntry *e = st.lookup(var);
     if (e != nullptr) {
@@ -677,226 +677,226 @@ public:
       }
     }
   }
-  Value eval() override {
-    Value value;
-    if ( op == "+") {
-      if ( left->type_check(TYPE_integer) ) {
-        if  ( right->type_check(TYPE_integer) ) {
-          value.integer_value = left->eval().integer_value + right->eval().integer_value;
-        }
-        else if ( right->type_check(TYPE_real) ){
-          value.real_value = left->eval().integer_value + right->eval().real_value;
-        }
-      }
-      else if ( left->type_check(TYPE_real) ){
-        if  ( right->type_check(TYPE_integer) ) {
-          value.real_value = left->eval().real_value + right->eval().integer_value;
-        }
-        else if ( right->type_check(TYPE_real) ){
-          value.real_value = left->eval().real_value + right->eval().real_value;
-        }
-      }
-    }
-    if ( op == "-") {
-      if ( left->type_check(TYPE_integer) ) {
-        if  ( right->type_check(TYPE_integer) ) {
-          value.integer_value = left->eval().integer_value - right->eval().integer_value;
-        }
-        else if ( right->type_check(TYPE_real) ){
-          value.real_value = left->eval().integer_value - right->eval().real_value;
-        }
-      }
-      else if ( left->type_check(TYPE_real) ){
-        if  ( right->type_check(TYPE_integer) ) {
-          value.real_value = left->eval().real_value - right->eval().integer_value;
-        }
-        else if ( right->type_check(TYPE_real) ){
-          value.real_value = left->eval().real_value - right->eval().real_value;
-        }
-      }
-    }
-    if ( op == "*" ) {
-      if ( left->type_check(TYPE_integer) ) {
-        if  ( right->type_check(TYPE_integer) ) {
-          value.integer_value = left->eval().integer_value * right->eval().integer_value;
-        }
-        else if ( right->type_check(TYPE_real) ){
-          value.real_value = left->eval().integer_value * right->eval().real_value;
-        }
-      }
-      else if ( left->type_check(TYPE_real) ){
-        if  ( right->type_check(TYPE_integer) ) {
-          value.real_value = left->eval().real_value * right->eval().integer_value;
-        }
-        else if ( right->type_check(TYPE_real) ){
-          value.real_value = left->eval().real_value * right->eval().real_value;
-        }
-      }
-    }
-    if ( op == "/" ) {
-      if ( left->type_check(TYPE_integer) ) {
-        if  ( right->type_check(TYPE_integer) ) {
-          value.real_value = left->eval().integer_value / right->eval().integer_value;
-        }
-        else if ( right->type_check(TYPE_real) ){
-          value.real_value = left->eval().integer_value / right->eval().real_value;
-        }
-      }
-      else if ( left->type_check(TYPE_real) ){
-        if  ( right->type_check(TYPE_integer) ) {
-          value.real_value = left->eval().real_value / right->eval().integer_value;
-        }
-        else if ( right->type_check(TYPE_real) ){
-          value.real_value = left->eval().real_value / right->eval().real_value;
-        }
-      }
-    }
-    if ( op == "div") {
-      value.integer_value = left->eval().integer_value / right->eval().integer_value;
-    }
-    if ( op == "mod") {
-      value.integer_value = left->eval().integer_value % right->eval().integer_value;
-    }
-    if ( op == "=") {
-      if ( left->type_check(TYPE_integer) ) {
-        if ( right->type_check(TYPE_integer) ) {
-          value.boolean_value = left->eval().integer_value == right->eval().integer_value;
-        }
-        else {
-          value.boolean_value = left->eval().integer_value == right->eval().real_value;
-        }
-      }
-      if ( left->type_check(TYPE_real) ) {
-        if ( right->type_check(TYPE_integer) ) {
-          value.boolean_value = left->eval().real_value == right->eval().integer_value;
-        }
-        else {
-          value.boolean_value = left->eval().real_value == right->eval().real_value;
-        }
-      }
-      if ( left->type_check(TYPE_boolean) ) {
-        value.boolean_value = left->eval().boolean_value == right->eval().boolean_value;
-      }
-      if ( left->type_check(TYPE_char) ) {
-        value.boolean_value = left->eval().char_value == right->eval().char_value;
-      }
-      if ( left->type_check(TYPE_pointer) ) {
-        value.boolean_value = left->eval().pointer_value == right->eval().pointer_value;
-      }
-      if (is_string(left->get_expr_type())) {
-        value.boolean_value = !equal_strings(left->get_expr_type(), right->get_expr_type(), left->eval(), right->eval());
-      }
-    }
-    if ( op == "<>" ) {
-      if ( left->type_check(TYPE_integer) ) {
-        if ( right->type_check(TYPE_integer) ) {
-          value.boolean_value = left->eval().integer_value != right->eval().integer_value;
-        }
-        else {
-          value.boolean_value = left->eval().integer_value != right->eval().real_value;
-        }
-      }
-      if ( left->type_check(TYPE_real) ) {
-        if ( right->type_check(TYPE_integer) ) {
-          value.boolean_value = left->eval().real_value != right->eval().integer_value;
-        }
-        else {
-          value.boolean_value = left->eval().real_value != right->eval().real_value;
-        }
-      }
-      if ( left->type_check(TYPE_boolean) ) {
-        value.boolean_value = left->eval().boolean_value != right->eval().boolean_value;
-      }
-      if ( left->type_check(TYPE_char) ) {
-        value.boolean_value = left->eval().char_value != right->eval().char_value;
-      }
-      if ( left->type_check(TYPE_pointer) ) {
-        value.boolean_value = left->eval().pointer_value != right->eval().pointer_value;
-      }
-      if ( is_string(left->get_expr_type() ) ) {
-        value.boolean_value = equal_strings(left->get_expr_type(), right->get_expr_type(), left->eval(), right->eval());
-      }
-    }
-    if ( op == "or" ) {
-      value.boolean_value = left->eval().boolean_value || right->eval().boolean_value;
-    }
-    if ( op == "and" ) {
-      value.boolean_value = left->eval().boolean_value && right->eval().boolean_value;
-    }
-    if ( op == ">" ) {
-      if ( left->type_check(TYPE_integer) ) {
-        if  ( right->type_check(TYPE_integer) ) {
-          value.boolean_value = left->eval().integer_value > right->eval().integer_value;
-        }
-        else if ( right->type_check(TYPE_real) ){
-          value.boolean_value = left->eval().integer_value > right->eval().real_value;
-        }
-      }
-      else if ( left->type_check(TYPE_real) ){
-        if  ( right->type_check(TYPE_integer) ) {
-          value.boolean_value = left->eval().real_value > right->eval().integer_value;
-        }
-        else if ( right->type_check(TYPE_real) ){
-          value.boolean_value = left->eval().real_value > right->eval().real_value;
-        }
-      }
-    }
-    if ( op == "<" ) {
-      if ( left->type_check(TYPE_integer) ) {
-        if  ( right->type_check(TYPE_integer) ) {
-          value.boolean_value = left->eval().integer_value < right->eval().integer_value;
-        }
-        else if ( right->type_check(TYPE_real) ){
-          value.boolean_value = left->eval().integer_value < right->eval().real_value;
-        }
-      }
-      else if ( left->type_check(TYPE_real) ){
-        if  ( right->type_check(TYPE_integer) ) {
-          value.boolean_value = left->eval().real_value < right->eval().integer_value;
-        }
-        else if ( right->type_check(TYPE_real) ){
-          value.boolean_value = left->eval().real_value < right->eval().real_value;
-        }
-      }
-    }
-    if ( op == ">=" ) {
-      if ( left->type_check(TYPE_integer) ) {
-        if  ( right->type_check(TYPE_integer) ) {
-          value.boolean_value = left->eval().integer_value >= right->eval().integer_value;
-        }
-        else if ( right->type_check(TYPE_real) ){
-          value.boolean_value = left->eval().integer_value >= right->eval().real_value;
-        }
-      }
-      else if ( left->type_check(TYPE_real) ){
-        if  ( right->type_check(TYPE_integer) ) {
-          value.boolean_value = left->eval().real_value >= right->eval().integer_value;
-        }
-        else if ( right->type_check(TYPE_real) ){
-          value.boolean_value = left->eval().real_value >= right->eval().real_value;
-        }
-      }
-    }
-    if ( op == "<=" ) {
-      if ( left->type_check(TYPE_integer) ) {
-        if  ( right->type_check(TYPE_integer) ) {
-          value.boolean_value = left->eval().integer_value <= right->eval().integer_value;
-        }
-        else if ( right->type_check(TYPE_real) ){
-          value.boolean_value = left->eval().integer_value <= right->eval().real_value;
-        }
-      }
-      else if ( left->type_check(TYPE_real) ){
-        if  ( right->type_check(TYPE_integer) ) {
-          value.boolean_value = left->eval().real_value <= right->eval().integer_value;
-        }
-        else if ( right->type_check(TYPE_real) ){
-          value.boolean_value = left->eval().real_value <= right->eval().real_value;
-        }
-      }
-    }
-    return value;
-  }
+  // Value eval() override {
+  //   Value value;
+  //   if ( op == "+") {
+  //     if ( left->type_check(TYPE_integer) ) {
+  //       if  ( right->type_check(TYPE_integer) ) {
+  //         value.integer_value = left->eval().integer_value + right->eval().integer_value;
+  //       }
+  //       else if ( right->type_check(TYPE_real) ){
+  //         value.real_value = left->eval().integer_value + right->eval().real_value;
+  //       }
+  //     }
+  //     else if ( left->type_check(TYPE_real) ){
+  //       if  ( right->type_check(TYPE_integer) ) {
+  //         value.real_value = left->eval().real_value + right->eval().integer_value;
+  //       }
+  //       else if ( right->type_check(TYPE_real) ){
+  //         value.real_value = left->eval().real_value + right->eval().real_value;
+  //       }
+  //     }
+  //   }
+  //   if ( op == "-") {
+  //     if ( left->type_check(TYPE_integer) ) {
+  //       if  ( right->type_check(TYPE_integer) ) {
+  //         value.integer_value = left->eval().integer_value - right->eval().integer_value;
+  //       }
+  //       else if ( right->type_check(TYPE_real) ){
+  //         value.real_value = left->eval().integer_value - right->eval().real_value;
+  //       }
+  //     }
+  //     else if ( left->type_check(TYPE_real) ){
+  //       if  ( right->type_check(TYPE_integer) ) {
+  //         value.real_value = left->eval().real_value - right->eval().integer_value;
+  //       }
+  //       else if ( right->type_check(TYPE_real) ){
+  //         value.real_value = left->eval().real_value - right->eval().real_value;
+  //       }
+  //     }
+  //   }
+  //   if ( op == "*" ) {
+  //     if ( left->type_check(TYPE_integer) ) {
+  //       if  ( right->type_check(TYPE_integer) ) {
+  //         value.integer_value = left->eval().integer_value * right->eval().integer_value;
+  //       }
+  //       else if ( right->type_check(TYPE_real) ){
+  //         value.real_value = left->eval().integer_value * right->eval().real_value;
+  //       }
+  //     }
+  //     else if ( left->type_check(TYPE_real) ){
+  //       if  ( right->type_check(TYPE_integer) ) {
+  //         value.real_value = left->eval().real_value * right->eval().integer_value;
+  //       }
+  //       else if ( right->type_check(TYPE_real) ){
+  //         value.real_value = left->eval().real_value * right->eval().real_value;
+  //       }
+  //     }
+  //   }
+  //   if ( op == "/" ) {
+  //     if ( left->type_check(TYPE_integer) ) {
+  //       if  ( right->type_check(TYPE_integer) ) {
+  //         value.real_value = left->eval().integer_value / right->eval().integer_value;
+  //       }
+  //       else if ( right->type_check(TYPE_real) ){
+  //         value.real_value = left->eval().integer_value / right->eval().real_value;
+  //       }
+  //     }
+  //     else if ( left->type_check(TYPE_real) ){
+  //       if  ( right->type_check(TYPE_integer) ) {
+  //         value.real_value = left->eval().real_value / right->eval().integer_value;
+  //       }
+  //       else if ( right->type_check(TYPE_real) ){
+  //         value.real_value = left->eval().real_value / right->eval().real_value;
+  //       }
+  //     }
+  //   }
+  //   if ( op == "div") {
+  //     value.integer_value = left->eval().integer_value / right->eval().integer_value;
+  //   }
+  //   if ( op == "mod") {
+  //     value.integer_value = left->eval().integer_value % right->eval().integer_value;
+  //   }
+  //   if ( op == "=") {
+  //     if ( left->type_check(TYPE_integer) ) {
+  //       if ( right->type_check(TYPE_integer) ) {
+  //         value.boolean_value = left->eval().integer_value == right->eval().integer_value;
+  //       }
+  //       else {
+  //         value.boolean_value = left->eval().integer_value == right->eval().real_value;
+  //       }
+  //     }
+  //     if ( left->type_check(TYPE_real) ) {
+  //       if ( right->type_check(TYPE_integer) ) {
+  //         value.boolean_value = left->eval().real_value == right->eval().integer_value;
+  //       }
+  //       else {
+  //         value.boolean_value = left->eval().real_value == right->eval().real_value;
+  //       }
+  //     }
+  //     if ( left->type_check(TYPE_boolean) ) {
+  //       value.boolean_value = left->eval().boolean_value == right->eval().boolean_value;
+  //     }
+  //     if ( left->type_check(TYPE_char) ) {
+  //       value.boolean_value = left->eval().char_value == right->eval().char_value;
+  //     }
+  //     if ( left->type_check(TYPE_pointer) ) {
+  //       value.boolean_value = left->eval().pointer_value == right->eval().pointer_value;
+  //     }
+  //     if (is_string(left->get_expr_type())) {
+  //       value.boolean_value = !equal_strings(left->get_expr_type(), right->get_expr_type(), left->eval(), right->eval());
+  //     }
+  //   }
+  //   if ( op == "<>" ) {
+  //     if ( left->type_check(TYPE_integer) ) {
+  //       if ( right->type_check(TYPE_integer) ) {
+  //         value.boolean_value = left->eval().integer_value != right->eval().integer_value;
+  //       }
+  //       else {
+  //         value.boolean_value = left->eval().integer_value != right->eval().real_value;
+  //       }
+  //     }
+  //     if ( left->type_check(TYPE_real) ) {
+  //       if ( right->type_check(TYPE_integer) ) {
+  //         value.boolean_value = left->eval().real_value != right->eval().integer_value;
+  //       }
+  //       else {
+  //         value.boolean_value = left->eval().real_value != right->eval().real_value;
+  //       }
+  //     }
+  //     if ( left->type_check(TYPE_boolean) ) {
+  //       value.boolean_value = left->eval().boolean_value != right->eval().boolean_value;
+  //     }
+  //     if ( left->type_check(TYPE_char) ) {
+  //       value.boolean_value = left->eval().char_value != right->eval().char_value;
+  //     }
+  //     if ( left->type_check(TYPE_pointer) ) {
+  //       value.boolean_value = left->eval().pointer_value != right->eval().pointer_value;
+  //     }
+  //     if ( is_string(left->get_expr_type() ) ) {
+  //       value.boolean_value = equal_strings(left->get_expr_type(), right->get_expr_type(), left->eval(), right->eval());
+  //     }
+  //   }
+  //   if ( op == "or" ) {
+  //     value.boolean_value = left->eval().boolean_value || right->eval().boolean_value;
+  //   }
+  //   if ( op == "and" ) {
+  //     value.boolean_value = left->eval().boolean_value && right->eval().boolean_value;
+  //   }
+  //   if ( op == ">" ) {
+  //     if ( left->type_check(TYPE_integer) ) {
+  //       if  ( right->type_check(TYPE_integer) ) {
+  //         value.boolean_value = left->eval().integer_value > right->eval().integer_value;
+  //       }
+  //       else if ( right->type_check(TYPE_real) ){
+  //         value.boolean_value = left->eval().integer_value > right->eval().real_value;
+  //       }
+  //     }
+  //     else if ( left->type_check(TYPE_real) ){
+  //       if  ( right->type_check(TYPE_integer) ) {
+  //         value.boolean_value = left->eval().real_value > right->eval().integer_value;
+  //       }
+  //       else if ( right->type_check(TYPE_real) ){
+  //         value.boolean_value = left->eval().real_value > right->eval().real_value;
+  //       }
+  //     }
+  //   }
+  //   if ( op == "<" ) {
+  //     if ( left->type_check(TYPE_integer) ) {
+  //       if  ( right->type_check(TYPE_integer) ) {
+  //         value.boolean_value = left->eval().integer_value < right->eval().integer_value;
+  //       }
+  //       else if ( right->type_check(TYPE_real) ){
+  //         value.boolean_value = left->eval().integer_value < right->eval().real_value;
+  //       }
+  //     }
+  //     else if ( left->type_check(TYPE_real) ){
+  //       if  ( right->type_check(TYPE_integer) ) {
+  //         value.boolean_value = left->eval().real_value < right->eval().integer_value;
+  //       }
+  //       else if ( right->type_check(TYPE_real) ){
+  //         value.boolean_value = left->eval().real_value < right->eval().real_value;
+  //       }
+  //     }
+  //   }
+  //   if ( op == ">=" ) {
+  //     if ( left->type_check(TYPE_integer) ) {
+  //       if  ( right->type_check(TYPE_integer) ) {
+  //         value.boolean_value = left->eval().integer_value >= right->eval().integer_value;
+  //       }
+  //       else if ( right->type_check(TYPE_real) ){
+  //         value.boolean_value = left->eval().integer_value >= right->eval().real_value;
+  //       }
+  //     }
+  //     else if ( left->type_check(TYPE_real) ){
+  //       if  ( right->type_check(TYPE_integer) ) {
+  //         value.boolean_value = left->eval().real_value >= right->eval().integer_value;
+  //       }
+  //       else if ( right->type_check(TYPE_real) ){
+  //         value.boolean_value = left->eval().real_value >= right->eval().real_value;
+  //       }
+  //     }
+  //   }
+  //   if ( op == "<=" ) {
+  //     if ( left->type_check(TYPE_integer) ) {
+  //       if  ( right->type_check(TYPE_integer) ) {
+  //         value.boolean_value = left->eval().integer_value <= right->eval().integer_value;
+  //       }
+  //       else if ( right->type_check(TYPE_real) ){
+  //         value.boolean_value = left->eval().integer_value <= right->eval().real_value;
+  //       }
+  //     }
+  //     else if ( left->type_check(TYPE_real) ){
+  //       if  ( right->type_check(TYPE_integer) ) {
+  //         value.boolean_value = left->eval().real_value <= right->eval().integer_value;
+  //       }
+  //       else if ( right->type_check(TYPE_real) ){
+  //         value.boolean_value = left->eval().real_value <= right->eval().real_value;
+  //       }
+  //     }
+  //   }
+  //   return value;
+  // }
 };
 
 
@@ -933,32 +933,32 @@ public:
       }
     }
   }
-  Value eval() override {
-    Value value;
-    if ( op == "+" ) {
-      if (right->type_check(TYPE_integer)) {
-        value.integer_value = right->eval().integer_value;
-      }
-      if (right->type_check(TYPE_real)) {
-        value.real_value = right->eval().real_value;
-      }
-    }
-    else if ( op == "-" ) {
-      if (right->type_check(TYPE_integer)) {
-        value.integer_value = (-1)*right->eval().integer_value;
-      }
-      if (right->type_check(TYPE_real)) {
-        value.real_value = (-1)*right->eval().real_value;
-      }
-    }
-    else if ( op == "not" ) {
-      value.boolean_value = !right->eval().boolean_value;
-    }
-    else if ( op == "@" ) {
-      value.pointer_value = right;
-    }
-    return value;
-  }
+  // Value eval() override {
+  //   Value value;
+  //   if ( op == "+" ) {
+  //     if (right->type_check(TYPE_integer)) {
+  //       value.integer_value = right->eval().integer_value;
+  //     }
+  //     if (right->type_check(TYPE_real)) {
+  //       value.real_value = right->eval().real_value;
+  //     }
+  //   }
+  //   else if ( op == "-" ) {
+  //     if (right->type_check(TYPE_integer)) {
+  //       value.integer_value = (-1)*right->eval().integer_value;
+  //     }
+  //     if (right->type_check(TYPE_real)) {
+  //       value.real_value = (-1)*right->eval().real_value;
+  //     }
+  //   }
+  //   else if ( op == "not" ) {
+  //     value.boolean_value = !right->eval().boolean_value;
+  //   }
+  //   else if ( op == "@" ) {
+  //     value.pointer_value = right;
+  //   }
+  //   return value;
+  // }
 };
 
 
@@ -968,11 +968,11 @@ public:
   void printOn(std::ostream &out) const override {
     out << "Nil\n";
   }
-  Value eval() override {
-    Value value;
-    value.pointer_value = nullptr;
-    return value;
-  }
+  // Value eval() override {
+  //   Value value;
+  //   value.pointer_value = nullptr;
+  //   return value;
+  // }
   void sem() override {
     type = type_pointer();
   }
@@ -990,11 +990,11 @@ public:
   void printOn(std::ostream &out) const override {
     out << "Charconst(" << char_const << ")\n";
   }
-  Value eval() override {
-    Value value;
-    value.char_value = char_const;
-    return value;
-  }
+  // Value eval() override {
+  //   Value value;
+  //   value.char_value = char_const;
+  //   return value;
+  // }
   void sem() override {
     type = type_char();
   }
@@ -1012,11 +1012,11 @@ public:
   void printOn(std::ostream &out) const override {
     out << "Realconst(" << num << ")\n";
   }
-  Value eval() override {
-    Value value;
-    value.real_value = num;
-    return value;
-  }
+  // Value eval() override {
+  //   Value value;
+  //   value.real_value = num;
+  //   return value;
+  // }
   void sem() override {
     type = type_real();
   }
@@ -1034,11 +1034,11 @@ public:
   void printOn(std::ostream &out) const override {
     out << "Bool(" << boolean << ")\n";
   }
-  Value eval() override {
-    Value value;
-    value.boolean_value = (boolean == "true");
-    return value;
-  }
+  // Value eval() override {
+  //   Value value;
+  //   value.boolean_value = (boolean == "true");
+  //   return value;
+  // }
   void sem() override {
     type = type_boolean();
   }
@@ -1056,11 +1056,11 @@ public:
   void printOn(std::ostream &out) const override {
     out << "Intconst(" << num << ")\n";
   }
-  Value eval() override {
-    Value value;
-    value.integer_value = num;
-    return value;
-  }
+  // Value eval() override {
+  //   Value value;
+  //   value.integer_value = num;
+  //   return value;
+  // }
   void sem() override {
     type = type_integer();
   }
