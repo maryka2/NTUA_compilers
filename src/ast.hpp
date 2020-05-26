@@ -73,6 +73,7 @@ protected:
 
   // Global LLVM variables related to the generated code.
   static GlobalVariable *TheVars;
+  static GlobalVariable *TheRealVars;
   static GlobalVariable *TheNL;
   static Function *TheWriteInteger;
   static Function *TheWriteString;
@@ -81,6 +82,7 @@ protected:
   static Type *i8;
   static Type *i32;
   static Type *i64;
+  static Type *DoubleTyID;
 
   // Useful LLVM helper functions.
   ConstantInt* c8(char c) const {
@@ -89,11 +91,17 @@ protected:
   ConstantInt* c32(int n) const {
     return ConstantInt::get(TheContext, APInt(32, n, true));
   }
+  ConstantFP* fp(double n) const {
+    return ConstantFP::get(TheContext, APFloat(n));
+  }
+/*  ConstantPointerNull null_ptr() {
+    return ConstantPointerNull::get();
+  }*/
 public:
   virtual ~AST() {}
   virtual void printOn(std::ostream &out) const = 0;
   virtual void sem() {}
-
+  virtual Value* compile() const = 0;
   /*void llvm_compile_and_dump() {
     // Initialize the module and the optimization passes.
     TheModule = make_unique<Module>("minibasic program", TheContext);
@@ -111,6 +119,11 @@ public:
         *TheModule, vars_type, false, GlobalValue::PrivateLinkage,
         ConstantAggregateZero::get(vars_type), "vars");
     TheVars->setAlignment(16);
+    ArrayType *realvars_type = ArrayType::get(DoubleTyID, 26);
+   TheRealVars = new GlobalVariable(
+       *TheModule, realvars_type, false, GlobalValue::PrivateLinkage,
+       ConstantAggregateZero::get(realvars_type), "realvars");
+   TheRealVars->setAlignment(32);
     // @nl = private constant [2 x i8] c"\0A\00", align 1
     ArrayType *nl_type = ArrayType::get(i8, 2);
     TheNL = new GlobalVariable(
@@ -178,11 +191,6 @@ public:
     }
     return (type->kind == t);
   }
-  // virtual Value eval() {
-  //   Value value;
-  //   value.integer_value = 0;
-  //   return value;
-  // }
   Types get_expr_type() {
     return type;
   }
@@ -241,6 +249,13 @@ public:
       type = e->type;
     }
   }
+  Value* compile() const override{
+    Value *r;
+    ERROR("Non implemented");
+    exit(1);
+    return r;
+ }
+
 };
 
 
@@ -299,6 +314,12 @@ public:
       id->insertIntoCurrentScope();
     }
   }
+  Value* compile() const override{
+    Value *r;
+    ERROR("Non implemented");
+    exit(1);
+    return r;
+ }
 };
 
 
@@ -422,6 +443,12 @@ public:
       }
     }
   }
+  Value* compile() const override{
+    Value *r;
+    ERROR("Non implemented");
+    exit(1);
+    return r;
+ }
 };
 
 
@@ -484,6 +511,12 @@ public:
       header->sem_outter_scope();
     }
   }
+  Value* compile() const override{
+    Value *r;
+    ERROR("Non implemented");
+    exit(1);
+    return r;
+ }
 };
 
 
@@ -588,11 +621,12 @@ public:
     size = st.getSizeOfCurrentScope();
     st.closeScope();
   }
-  // virtual void run() override {
-    //   for (int i = 0; i < size; ++i) rt_stack.push_back(0);
-    //   for (Stmt *s : stmt_list) s->run();
-    //   for (int i = 0; i < size; ++i) rt_stack.pop_back();
-    // }
+  Value* compile() const override{
+    Value *r;
+    ERROR("Non implemented");
+    exit(1);
+    return r;
+ }
   };
 
 
@@ -616,6 +650,12 @@ public:
     body->sem();
     st.closeScope();
   }
+  Value* compile() const override{
+    Value *r;
+    ERROR("Non implemented");
+    exit(1);
+    return r;
+ }
 };
 
 
@@ -636,6 +676,12 @@ public:
     }
     type = expr->get_expr_type()->u.t_pointer.type;
   }
+  Value* compile() const override{
+    Value *r;
+    ERROR("Non implemented");
+    exit(1);
+    return r;
+ }
 };
 
 
@@ -666,6 +712,12 @@ public:
       ERROR("Indexing non-array lvalue.");
     }
   }
+  Value* compile() const override{
+    Value *r;
+    ERROR("Non implemented");
+    exit(1);
+    return r;
+ }
 };
 
 
@@ -683,6 +735,12 @@ public:
   void sem() override {
     type = type_arrayI(str.length() + 1, type_char());
   }
+  Value* compile() const override{
+    Value *r;
+    ERROR("Non implemented");
+    exit(1);
+    return r;
+ }
 };
 
 
@@ -699,19 +757,19 @@ public:
   }
   void sem() override {
     if (( left->type_check(TYPE_arrayI) ) || ( left->type_check(TYPE_arrayII) ) || ( right->type_check(TYPE_arrayI) ) || ( right->type_check(TYPE_arrayII) )) {
-      ERROR("1 BinOp operands have incompatible type for operation '" + op + "'");
+      ERROR("BinOp operands have incompatible type for operation '" + op + "'");
     }
     if ( left->type_check(TYPE_pointer) !=  right->type_check(TYPE_pointer) ) {
-      ERROR("2 BinOp operands have incompatible type for operation '" + op + "'");
+      ERROR("BinOp operands have incompatible type for operation '" + op + "'");
     }
     if ( left->type_check(TYPE_char) != right->type_check(TYPE_char) ) {
-      ERROR("3 BinOp operands have incompatible type for operation '" + op + "'");
+      ERROR("BinOp operands have incompatible type for operation '" + op + "'");
     }
     if ( left->type_check(TYPE_boolean) != right->type_check(TYPE_boolean) ) {
-      ERROR("4 BinOp operands have incompatible type for operation '" + op + "'");
+      ERROR("BinOp operands have incompatible type for operation '" + op + "'");
     }
     if ( (left->type_check(TYPE_integer) || left->type_check(TYPE_real)) != (right->type_check(TYPE_integer) || right->type_check(TYPE_real) )){
-      ERROR("5 BinOp operands have incompatible type for operation '" + op + "'");
+      ERROR("BinOp operands have incompatible type for operation '" + op + "'");
     }
     if (op == "+" || op == "-" || op == "*") {
       if (( left->type_check(TYPE_integer) ) && ( right->type_check(TYPE_integer) )) {
@@ -721,7 +779,7 @@ public:
         type = type_real();
       }
       else {
-        ERROR("6 BinOp operands have incompatible type for operation '" + op + "'");
+        ERROR("BinOp operands have incompatible type for operation '" + op + "'");
       }
     }
     else if ( op == "/" ) {
@@ -760,226 +818,107 @@ public:
       }
     }
   }
-  // Value eval() override {
-  //   Value value;
-  //   if ( op == "+") {
-  //     if ( left->type_check(TYPE_integer) ) {
-  //       if  ( right->type_check(TYPE_integer) ) {
-  //         value.integer_value = left->eval().integer_value + right->eval().integer_value;
-  //       }
-  //       else if ( right->type_check(TYPE_real) ){
-  //         value.real_value = left->eval().integer_value + right->eval().real_value;
-  //       }
-  //     }
-  //     else if ( left->type_check(TYPE_real) ){
-  //       if  ( right->type_check(TYPE_integer) ) {
-  //         value.real_value = left->eval().real_value + right->eval().integer_value;
-  //       }
-  //       else if ( right->type_check(TYPE_real) ){
-  //         value.real_value = left->eval().real_value + right->eval().real_value;
-  //       }
-  //     }
-  //   }
-  //   if ( op == "-") {
-  //     if ( left->type_check(TYPE_integer) ) {
-  //       if  ( right->type_check(TYPE_integer) ) {
-  //         value.integer_value = left->eval().integer_value - right->eval().integer_value;
-  //       }
-  //       else if ( right->type_check(TYPE_real) ){
-  //         value.real_value = left->eval().integer_value - right->eval().real_value;
-  //       }
-  //     }
-  //     else if ( left->type_check(TYPE_real) ){
-  //       if  ( right->type_check(TYPE_integer) ) {
-  //         value.real_value = left->eval().real_value - right->eval().integer_value;
-  //       }
-  //       else if ( right->type_check(TYPE_real) ){
-  //         value.real_value = left->eval().real_value - right->eval().real_value;
-  //       }
-  //     }
-  //   }
-  //   if ( op == "*" ) {
-  //     if ( left->type_check(TYPE_integer) ) {
-  //       if  ( right->type_check(TYPE_integer) ) {
-  //         value.integer_value = left->eval().integer_value * right->eval().integer_value;
-  //       }
-  //       else if ( right->type_check(TYPE_real) ){
-  //         value.real_value = left->eval().integer_value * right->eval().real_value;
-  //       }
-  //     }
-  //     else if ( left->type_check(TYPE_real) ){
-  //       if  ( right->type_check(TYPE_integer) ) {
-  //         value.real_value = left->eval().real_value * right->eval().integer_value;
-  //       }
-  //       else if ( right->type_check(TYPE_real) ){
-  //         value.real_value = left->eval().real_value * right->eval().real_value;
-  //       }
-  //     }
-  //   }
-  //   if ( op == "/" ) {
-  //     if ( left->type_check(TYPE_integer) ) {
-  //       if  ( right->type_check(TYPE_integer) ) {
-  //         value.real_value = left->eval().integer_value / right->eval().integer_value;
-  //       }
-  //       else if ( right->type_check(TYPE_real) ){
-  //         value.real_value = left->eval().integer_value / right->eval().real_value;
-  //       }
-  //     }
-  //     else if ( left->type_check(TYPE_real) ){
-  //       if  ( right->type_check(TYPE_integer) ) {
-  //         value.real_value = left->eval().real_value / right->eval().integer_value;
-  //       }
-  //       else if ( right->type_check(TYPE_real) ){
-  //         value.real_value = left->eval().real_value / right->eval().real_value;
-  //       }
-  //     }
-  //   }
-  //   if ( op == "div") {
-  //     value.integer_value = left->eval().integer_value / right->eval().integer_value;
-  //   }
-  //   if ( op == "mod") {
-  //     value.integer_value = left->eval().integer_value % right->eval().integer_value;
-  //   }
-  //   if ( op == "=") {
-  //     if ( left->type_check(TYPE_integer) ) {
-  //       if ( right->type_check(TYPE_integer) ) {
-  //         value.boolean_value = left->eval().integer_value == right->eval().integer_value;
-  //       }
-  //       else {
-  //         value.boolean_value = left->eval().integer_value == right->eval().real_value;
-  //       }
-  //     }
-  //     if ( left->type_check(TYPE_real) ) {
-  //       if ( right->type_check(TYPE_integer) ) {
-  //         value.boolean_value = left->eval().real_value == right->eval().integer_value;
-  //       }
-  //       else {
-  //         value.boolean_value = left->eval().real_value == right->eval().real_value;
-  //       }
-  //     }
-  //     if ( left->type_check(TYPE_boolean) ) {
-  //       value.boolean_value = left->eval().boolean_value == right->eval().boolean_value;
-  //     }
-  //     if ( left->type_check(TYPE_char) ) {
-  //       value.boolean_value = left->eval().char_value == right->eval().char_value;
-  //     }
-  //     if ( left->type_check(TYPE_pointer) ) {
-  //       value.boolean_value = left->eval().pointer_value == right->eval().pointer_value;
-  //     }
-  //     if (is_string(left->get_expr_type())) {
-  //       value.boolean_value = !equal_strings(left->get_expr_type(), right->get_expr_type(), left->eval(), right->eval());
-  //     }
-  //   }
-  //   if ( op == "<>" ) {
-  //     if ( left->type_check(TYPE_integer) ) {
-  //       if ( right->type_check(TYPE_integer) ) {
-  //         value.boolean_value = left->eval().integer_value != right->eval().integer_value;
-  //       }
-  //       else {
-  //         value.boolean_value = left->eval().integer_value != right->eval().real_value;
-  //       }
-  //     }
-  //     if ( left->type_check(TYPE_real) ) {
-  //       if ( right->type_check(TYPE_integer) ) {
-  //         value.boolean_value = left->eval().real_value != right->eval().integer_value;
-  //       }
-  //       else {
-  //         value.boolean_value = left->eval().real_value != right->eval().real_value;
-  //       }
-  //     }
-  //     if ( left->type_check(TYPE_boolean) ) {
-  //       value.boolean_value = left->eval().boolean_value != right->eval().boolean_value;
-  //     }
-  //     if ( left->type_check(TYPE_char) ) {
-  //       value.boolean_value = left->eval().char_value != right->eval().char_value;
-  //     }
-  //     if ( left->type_check(TYPE_pointer) ) {
-  //       value.boolean_value = left->eval().pointer_value != right->eval().pointer_value;
-  //     }
-  //     if ( is_string(left->get_expr_type() ) ) {
-  //       value.boolean_value = equal_strings(left->get_expr_type(), right->get_expr_type(), left->eval(), right->eval());
-  //     }
-  //   }
-  //   if ( op == "or" ) {
-  //     value.boolean_value = left->eval().boolean_value || right->eval().boolean_value;
-  //   }
-  //   if ( op == "and" ) {
-  //     value.boolean_value = left->eval().boolean_value && right->eval().boolean_value;
-  //   }
-  //   if ( op == ">" ) {
-  //     if ( left->type_check(TYPE_integer) ) {
-  //       if  ( right->type_check(TYPE_integer) ) {
-  //         value.boolean_value = left->eval().integer_value > right->eval().integer_value;
-  //       }
-  //       else if ( right->type_check(TYPE_real) ){
-  //         value.boolean_value = left->eval().integer_value > right->eval().real_value;
-  //       }
-  //     }
-  //     else if ( left->type_check(TYPE_real) ){
-  //       if  ( right->type_check(TYPE_integer) ) {
-  //         value.boolean_value = left->eval().real_value > right->eval().integer_value;
-  //       }
-  //       else if ( right->type_check(TYPE_real) ){
-  //         value.boolean_value = left->eval().real_value > right->eval().real_value;
-  //       }
-  //     }
-  //   }
-  //   if ( op == "<" ) {
-  //     if ( left->type_check(TYPE_integer) ) {
-  //       if  ( right->type_check(TYPE_integer) ) {
-  //         value.boolean_value = left->eval().integer_value < right->eval().integer_value;
-  //       }
-  //       else if ( right->type_check(TYPE_real) ){
-  //         value.boolean_value = left->eval().integer_value < right->eval().real_value;
-  //       }
-  //     }
-  //     else if ( left->type_check(TYPE_real) ){
-  //       if  ( right->type_check(TYPE_integer) ) {
-  //         value.boolean_value = left->eval().real_value < right->eval().integer_value;
-  //       }
-  //       else if ( right->type_check(TYPE_real) ){
-  //         value.boolean_value = left->eval().real_value < right->eval().real_value;
-  //       }
-  //     }
-  //   }
-  //   if ( op == ">=" ) {
-  //     if ( left->type_check(TYPE_integer) ) {
-  //       if  ( right->type_check(TYPE_integer) ) {
-  //         value.boolean_value = left->eval().integer_value >= right->eval().integer_value;
-  //       }
-  //       else if ( right->type_check(TYPE_real) ){
-  //         value.boolean_value = left->eval().integer_value >= right->eval().real_value;
-  //       }
-  //     }
-  //     else if ( left->type_check(TYPE_real) ){
-  //       if  ( right->type_check(TYPE_integer) ) {
-  //         value.boolean_value = left->eval().real_value >= right->eval().integer_value;
-  //       }
-  //       else if ( right->type_check(TYPE_real) ){
-  //         value.boolean_value = left->eval().real_value >= right->eval().real_value;
-  //       }
-  //     }
-  //   }
-  //   if ( op == "<=" ) {
-  //     if ( left->type_check(TYPE_integer) ) {
-  //       if  ( right->type_check(TYPE_integer) ) {
-  //         value.boolean_value = left->eval().integer_value <= right->eval().integer_value;
-  //       }
-  //       else if ( right->type_check(TYPE_real) ){
-  //         value.boolean_value = left->eval().integer_value <= right->eval().real_value;
-  //       }
-  //     }
-  //     else if ( left->type_check(TYPE_real) ){
-  //       if  ( right->type_check(TYPE_integer) ) {
-  //         value.boolean_value = left->eval().real_value <= right->eval().integer_value;
-  //       }
-  //       else if ( right->type_check(TYPE_real) ){
-  //         value.boolean_value = left->eval().real_value <= right->eval().real_value;
-  //       }
-  //     }
-  //   }
-  //   return value;
-  // }
+  Value* compile() const override{
+    Value *lv = left->compile();
+    Value *rv = right->compile();
+    // pif fix real - int
+    if ( op == "+") {
+      if ( left->type_check(TYPE_integer) && right->type_check(TYPE_integer) ) {
+        return Builder.CreateAdd(lv, rv);
+      }
+      return Builder.CreateFAdd(lv, rv);
+    }
+    if ( op == "-") {
+      if ( left->type_check(TYPE_integer) && right->type_check(TYPE_integer) ) {
+        return Builder.CreateSub(lv, rv);
+      }
+      return Builder.CreateFSub(lv, rv);
+    }
+    if ( op == "*" ) {
+      if ( left->type_check(TYPE_integer) && right->type_check(TYPE_integer) ) {
+        return Builder.CreateMul(lv, rv);
+      }
+      return Builder.CreateFMul(lv, rv);
+    }
+    // pif int to reals always
+    if ( op == "/" ) {
+      return Builder.CreateFDiv(lv, rv);
+    }
+    if ( op == "div") {
+      return Builder.CreateSDiv(lv, rv);
+    }
+    if ( op == "mod") {
+      return Builder.CreateSRem(lv, rv);
+    }
+    if ( op == "=") {
+      if ( left->type_check(TYPE_integer) && right->type_check(TYPE_integer) ) {
+        return Builder.CreateICmp(CmpInst::ICMP_EQ, lv, rv);
+      }
+      if ( left->type_check(TYPE_real) || right->type_check(TYPE_real) ) {
+        return Builder.CreateFCmp(CmpInst::ICMP_EQ, lv, rv);
+      }
+      if ( left->type_check(TYPE_boolean) ) {
+        return Builder.CreateICmp(CmpInst::ICMP_EQ, lv, rv);
+      }
+      if ( left->type_check(TYPE_char) ) {
+        return Builder.CreateICmp(CmpInst::ICMP_EQ, lv, rv);
+      }
+      if ( left->type_check(TYPE_pointer) ) {
+        return Builder.CreateICmp(CmpInst::ICMP_EQ, lv, rv);
+      }
+    //   // pif
+    //   if (is_string(left->get_expr_type())) {}
+    }
+    if ( op == "<>" ) {
+      if ( left->type_check(TYPE_integer) && right->type_check(TYPE_integer)) {
+        return Builder.CreateICmp(CmpInst::ICMP_NE, lv, rv);
+      }
+      if ( left->type_check(TYPE_real) || right->type_check(TYPE_real) ) {
+        return Builder.CreateFCmp(CmpInst::ICMP_NE, lv, rv);
+      }
+      if ( left->type_check(TYPE_boolean) ) {
+        return Builder.CreateICmp(CmpInst::ICMP_NE, lv, rv);
+      }
+      if ( left->type_check(TYPE_char) ) {
+        return Builder.CreateICmp(CmpInst::ICMP_NE, lv, rv);
+      }
+      if ( left->type_check(TYPE_pointer) ) {
+        return Builder.CreateICmp(CmpInst::ICMP_NE, lv, rv);
+      }
+      // pif
+      //if ( is_string(left->get_expr_type() ) ) {}
+    }
+    if ( op == "or" ) {
+      return Builder.CreateOr(lv, rv);
+    }
+    if ( op == "and" ) {
+      return Builder.CreateAnd(lv, rv);
+    }
+    if ( op == ">" ) {
+      if ( left->type_check(TYPE_integer) && right->type_check(TYPE_integer) ) {
+        return Builder.CreateICmp(CmpInst::ICMP_SGT, lv, rv);
+      }
+      return Builder.CreateFCmp(CmpInst::ICMP_SGT, lv, rv);
+    }
+    if ( op == "<" ) {
+      if ( left->type_check(TYPE_integer) && right->type_check(TYPE_integer) ) {
+        return Builder.CreateICmp(CmpInst::ICMP_SLT, lv, rv);
+      }
+      return Builder.CreateFCmp(CmpInst::ICMP_SLT, lv, rv);
+    }
+    if ( op == ">=" ) {
+      if ( left->type_check(TYPE_integer) && right->type_check(TYPE_integer) ) {
+        return Builder.CreateICmp(CmpInst::ICMP_SGE, lv, rv);
+      }
+      return Builder.CreateFCmp(CmpInst::ICMP_SGE, lv, rv);
+    }
+    if ( op == "<=" ) {
+      if ( left->type_check(TYPE_integer) && right->type_check(TYPE_integer) ) {
+        return Builder.CreateICmp(CmpInst::ICMP_SLE, lv, rv);
+      }
+      return Builder.CreateFCmp(CmpInst::ICMP_SLE, lv, rv);
+    }
+  }
 };
 
 
@@ -1016,32 +955,25 @@ public:
       }
     }
   }
-  // Value eval() override {
-  //   Value value;
-  //   if ( op == "+" ) {
-  //     if (right->type_check(TYPE_integer)) {
-  //       value.integer_value = right->eval().integer_value;
-  //     }
-  //     if (right->type_check(TYPE_real)) {
-  //       value.real_value = right->eval().real_value;
-  //     }
-  //   }
-  //   else if ( op == "-" ) {
-  //     if (right->type_check(TYPE_integer)) {
-  //       value.integer_value = (-1)*right->eval().integer_value;
-  //     }
-  //     if (right->type_check(TYPE_real)) {
-  //       value.real_value = (-1)*right->eval().real_value;
-  //     }
-  //   }
-  //   else if ( op == "not" ) {
-  //     value.boolean_value = !right->eval().boolean_value;
-  //   }
-  //   else if ( op == "@" ) {
-  //     value.pointer_value = right;
-  //   }
-  //   return value;
-  // }
+  Value* compile() const override{
+    Value *rv = right->compile();
+    if ( op == "+" ) {
+      return rv;
+    }
+    if ( op == "-" ) {
+      if (right->type_check(TYPE_integer)) {
+        return Builder.CreateNeg(rv);
+      }
+      return Builder.CreateFNeg(rv);
+    }
+    if ( op == "not" ) {
+      return Builder.CreateNot(rv);
+    }
+    //pif
+    // if ( op == "@" ) {
+    //   return Builder.CreateNeg(rv);
+    // }
+  }
 };
 
 
@@ -1051,14 +983,15 @@ public:
   void printOn(std::ostream &out) const override {
     out << "Nil\n";
   }
-  // Value eval() override {
-  //   Value value;
-  //   value.pointer_value = nullptr;
-  //   return value;
-  // }
   void sem() override {
     type = type_pointer();
   }
+  Value* compile() const override{
+    Value *r;
+    ERROR("Non implemented");
+    exit(1);
+    return r;
+ }
 };
 
 
@@ -1073,13 +1006,11 @@ public:
   void printOn(std::ostream &out) const override {
     out << "Charconst(" << char_const << ")\n";
   }
-  // Value eval() override {
-  //   Value value;
-  //   value.char_value = char_const;
-  //   return value;
-  // }
   void sem() override {
     type = type_char();
+  }
+  virtual Value* compile() const override {
+    return c8(char_const);
   }
 };
 
@@ -1095,13 +1026,11 @@ public:
   void printOn(std::ostream &out) const override {
     out << "Realconst(" << num << ")\n";
   }
-  // Value eval() override {
-  //   Value value;
-  //   value.real_value = num;
-  //   return value;
-  // }
   void sem() override {
     type = type_real();
+  }
+  virtual Value* compile() const override {
+    return fp(num);
   }
 };
 
@@ -1117,13 +1046,11 @@ public:
   void printOn(std::ostream &out) const override {
     out << "Bool(" << boolean << ")\n";
   }
-  // Value eval() override {
-  //   Value value;
-  //   value.boolean_value = (boolean == "true");
-  //   return value;
-  // }
   void sem() override {
     type = type_boolean();
+  }
+  virtual Value* compile() const override {
+    return c8(boolean == "true");
   }
 };
 
@@ -1139,13 +1066,11 @@ public:
   void printOn(std::ostream &out) const override {
     out << "Intconst(" << num << ")\n";
   }
-  // Value eval() override {
-  //   Value value;
-  //   value.integer_value = num;
-  //   return value;
-  // }
   void sem() override {
     type = type_integer();
+  }
+  virtual Value* compile() const override {
+    return c32(num);
   }
 };
 
@@ -1160,6 +1085,12 @@ public:
   void sem() override {
     // This is intentionally left empty.
   }
+  Value* compile() const override{
+    Value *r;
+    ERROR("Non implemented");
+    exit(1);
+    return r;
+ }
 };
 
 
@@ -1187,6 +1118,12 @@ public:
   //     stmt->run();
   //   }
   // }
+  Value* compile() const override{
+    Value *r;
+    ERROR("Non implemented");
+    exit(1);
+    return r;
+ }
 };
 
 
@@ -1221,6 +1158,12 @@ public:
   //   else if (stmt2 != nullptr)
   //     stmt2->run();
   // }
+  Value* compile() const override{
+    Value *r;
+    ERROR("Non implemented");
+    exit(1);
+    return r;
+ }
 };
 
 
@@ -1293,6 +1236,12 @@ public:
       ERROR("Call of '" + name + "' with type different than function or procedure.");
     }
   }
+  Value* compile() const override{
+    Value *r;
+    ERROR("Non implemented");
+    exit(1);
+    return r;
+ }
 };
 
 
@@ -1318,6 +1267,12 @@ public:
       ERROR("Assignement of wrong type.");
     }
   }
+  Value* compile() const override{
+    Value *r;
+    ERROR("Non implemented");
+    exit(1);
+    return r;
+ }
 };
 
 
@@ -1346,6 +1301,12 @@ public:
     e->type->u.t_label.is_defined = true;
     stmt->sem();
   }
+  Value* compile() const override{
+    Value *r;
+    ERROR("Non implemented");
+    exit(1);
+    return r;
+ }
 };
 
 
@@ -1367,6 +1328,12 @@ public:
     }
     e->type->u.t_label.is_called = true;
   }
+  Value* compile() const override{
+    Value *r;
+    ERROR("Non implemented");
+    exit(1);
+    return r;
+ }
 };
 
 
@@ -1384,6 +1351,12 @@ public:
   void sem() override {
     // this is intentionally left empty
   }
+  Value* compile() const override{
+    Value *r;
+    ERROR("Non implemented");
+    exit(1);
+    return r;
+ }
 };
 
 
@@ -1420,6 +1393,12 @@ public:
       }
     }
   }
+  Value* compile() const override{
+    Value *r;
+    ERROR("Non implemented");
+    exit(1);
+    return r;
+ }
 };
 
 
@@ -1447,4 +1426,11 @@ public:
       ERROR("Lvalue of new [] is not an arrayI.");
     }
   }
+  Value* compile() const override{
+    Value *r;
+    ERROR("Non implemented");
+    exit(1);
+    return r;
+ }
 };
+

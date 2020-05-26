@@ -32,7 +32,7 @@ void delete_type(Types t) {
   //free(t);   FIXME
 }
 
-bool equal_strings(Types t1, Types t2, Value v1, Value v2){
+bool equal_strings(Types t1, Types t2, myValue v1, myValue v2){
   if (t1->u.t_arrayI.dim != t1->u.t_arrayI.dim){
     return false;
   }
@@ -169,7 +169,7 @@ bool assignable_types (Types t1, Types t2){
   || (t1->kind == TYPE_arrayI && t2->kind == TYPE_arrayII && assignable_types(t1->u.t_arrayI.type, t2->u.t_arrayII.type))
   || (t1->kind == TYPE_real && t2->kind == TYPE_integer)
   || (t1->kind == TYPE_arrayII && t2->kind == TYPE_arrayI && assignable_types(t1->u.t_arrayII.type, t2->u.t_arrayI.type))
-  || (t1->kind == TYPE_pointer && t2->kind == TYPE_pointer && ( t1->u.t_pointer.is_null && t2->u.t_pointer.is_null || (!t1->u.t_pointer.is_null && !t2->u.t_pointer.is_null && assignable_types(t1->u.t_pointer.type, t2->u.t_pointer.type)))));
+  || (t1->kind == TYPE_pointer && t2->kind == TYPE_pointer && (( t1->u.t_pointer.is_null && t2->u.t_pointer.is_null) || (!t1->u.t_pointer.is_null && !t2->u.t_pointer.is_null && assignable_types(t1->u.t_pointer.type, t2->u.t_pointer.type)))));
 }
 
 
@@ -278,7 +278,7 @@ Types type_procedure(std::vector<Types> arg_types)
    result->kind = TYPE_procedure;
    result->u.t_procedure.is_forward = false;
    result->u.t_procedure.arg_types = arg_types;
-   for (Types t : arg_types){
+   for (unsigned int i = 0; i < arg_types.size(); i++){
      result->u.t_procedure.is_by_ref_arr.push_back(false);
    }
    return result;
@@ -293,7 +293,7 @@ Types type_function(std::vector<Types> arg_types, Types result_type)
    result->u.t_function.result_type = result_type;
    result->u.t_function.arg_types = arg_types;
 
-   for (Types t : arg_types){
+   for (unsigned int i = 0; i < arg_types.size(); i++){
      result->u.t_function.is_by_ref_arr.push_back(false);
    }
    return result;

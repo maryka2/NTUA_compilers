@@ -50,7 +50,7 @@ struct Types_tag {
     } u;
 };
 
-union Value {
+union myValue {
   int integer_value;
   double real_value;
   bool boolean_value;
@@ -61,7 +61,7 @@ union Value {
 };
 
 void delete_type(Types t);
-bool equal_strings(Types t1, Types t2, Value v1, Value v2);
+bool equal_strings(Types t1, Types t2, myValue v1, myValue v2);
 bool is_string(Types t);
 bool equal_types(Types t1, Types t2);
 bool assignable_types(Types t1, Types t2);
@@ -79,3 +79,4 @@ Types type_function(Types result_type, bool is_forward);
 Types type_procedure(bool is_forward);
 Types type_procedure(std::vector<Types> arg_types);
 Types type_function(std::vector<Types> arg_types, Types result_type);
+

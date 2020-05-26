@@ -7,7 +7,7 @@ using namespace std;
 // SymbolEntry is a small box in the data stack
 struct SymbolEntry {
   Types type;  // Variable's type
-  Value value;
+  myValue value;
   SymbolEntry *next;  // A pointer to the next SymbolEntry with the same name, or NULL if such a variable doesn't exist
   SymbolEntry() {}
   SymbolEntry(Types t, SymbolEntry *n) : type(t), next(n) {}  // Initializer
