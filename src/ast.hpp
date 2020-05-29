@@ -455,6 +455,7 @@ public:
 class Block;
 
 
+// compile done
 class Local: public AST {
 private:
   int local_type = -1;
@@ -512,14 +513,12 @@ public:
     }
   }
   Value* compile() const override{
-    Value *r;
-    ERROR("Non implemented");
-    exit(1);
-    return r;
+    return nullptr;
  }
 };
 
 
+// compile done
 class Block: public Stmt {
 private:
   std::vector<Local *> local_list;
@@ -622,14 +621,18 @@ public:
     st.closeScope();
   }
   Value* compile() const override{
-    Value *r;
-    ERROR("Non implemented");
-    exit(1);
-    return r;
+    for (Local *l: local_list) {
+      l->compile();
+    }
+    for (Stmt *s: stmt_list) {
+      s->compile();
+    }
+    return nullptr;
  }
   };
 
 
+// compile done
 class Local_after_block: public Local {
 private:
   Header *header;
@@ -651,10 +654,7 @@ public:
     st.closeScope();
   }
   Value* compile() const override{
-    Value *r;
-    ERROR("Non implemented");
-    exit(1);
-    return r;
+    return body->compile();
  }
 };
 
@@ -744,6 +744,7 @@ public:
 };
 
 
+// compile almost done (string, real type cast)
 class BinOp: public Rvalue {
 private:
   Expr *left;
@@ -821,6 +822,12 @@ public:
   Value* compile() const override{
     Value *lv = left->compile();
     Value *rv = right->compile();
+    if (left->type_check(TYPE_integer) && right->type_check(TYPE_real)) {
+      lv = Builder.SIToFPInst(lv, DoubleTyID);
+    }
+    else if (left->type_check(TYPE_real) && right->type_check(TYPE_integer)) {
+      rv = Builder.SIToFPInst(rv, DoubleTyID);
+    }
     // pif fix real - int
     if ( op == "+") {
       if ( left->type_check(TYPE_integer) && right->type_check(TYPE_integer) ) {
@@ -855,7 +862,7 @@ public:
         return Builder.CreateICmp(CmpInst::ICMP_EQ, lv, rv);
       }
       if ( left->type_check(TYPE_real) || right->type_check(TYPE_real) ) {
-        return Builder.CreateFCmp(CmpInst::ICMP_EQ, lv, rv);
+        return Builder.CreateFCmp(CmpInst::FCMP_OEQ, lv, rv);
       }
       if ( left->type_check(TYPE_boolean) ) {
         return Builder.CreateICmp(CmpInst::ICMP_EQ, lv, rv);
@@ -874,7 +881,7 @@ public:
         return Builder.CreateICmp(CmpInst::ICMP_NE, lv, rv);
       }
       if ( left->type_check(TYPE_real) || right->type_check(TYPE_real) ) {
-        return Builder.CreateFCmp(CmpInst::ICMP_NE, lv, rv);
+        return Builder.CreateFCmp(CmpInst::FCMP_ONE, lv, rv);
       }
       if ( left->type_check(TYPE_boolean) ) {
         return Builder.CreateICmp(CmpInst::ICMP_NE, lv, rv);
@@ -898,30 +905,31 @@ public:
       if ( left->type_check(TYPE_integer) && right->type_check(TYPE_integer) ) {
         return Builder.CreateICmp(CmpInst::ICMP_SGT, lv, rv);
       }
-      return Builder.CreateFCmp(CmpInst::ICMP_SGT, lv, rv);
+      return Builder.CreateFCmp(CmpInst::FCMP_OGT, lv, rv);
     }
     if ( op == "<" ) {
       if ( left->type_check(TYPE_integer) && right->type_check(TYPE_integer) ) {
         return Builder.CreateICmp(CmpInst::ICMP_SLT, lv, rv);
       }
-      return Builder.CreateFCmp(CmpInst::ICMP_SLT, lv, rv);
+      return Builder.CreateFCmp(CmpInst::FCMP_OLT, lv, rv);
     }
     if ( op == ">=" ) {
       if ( left->type_check(TYPE_integer) && right->type_check(TYPE_integer) ) {
         return Builder.CreateICmp(CmpInst::ICMP_SGE, lv, rv);
       }
-      return Builder.CreateFCmp(CmpInst::ICMP_SGE, lv, rv);
+      return Builder.CreateFCmp(CmpInst::FCMP_OGE, lv, rv);
     }
     if ( op == "<=" ) {
       if ( left->type_check(TYPE_integer) && right->type_check(TYPE_integer) ) {
         return Builder.CreateICmp(CmpInst::ICMP_SLE, lv, rv);
       }
-      return Builder.CreateFCmp(CmpInst::ICMP_SLE, lv, rv);
+      return Builder.CreateFCmp(CmpInst::FCMP_OLE, lv, rv);
     }
   }
 };
 
 
+// compile almost done (pointer @)
 class UnOp: public Rvalue {
 private:
   string op;
@@ -995,6 +1003,7 @@ public:
 };
 
 
+// compile done
 class Charconst: public Rvalue {
 private:
   char char_const;
@@ -1015,6 +1024,7 @@ public:
 };
 
 
+// compile done
 class Realconst: public Rvalue {
 private:
   double num;
@@ -1035,6 +1045,7 @@ public:
 };
 
 
+// compile done
 class Bool: public Rvalue {
 private:
   string boolean;
@@ -1055,6 +1066,7 @@ public:
 };
 
 
+// compile done
 class Intconst: public Rvalue {
 private:
   int num;
@@ -1075,6 +1087,7 @@ public:
 };
 
 
+// compile done
 class EmptyStmt: public Stmt {
 public:
   EmptyStmt() {}
@@ -1086,14 +1099,12 @@ public:
     // This is intentionally left empty.
   }
   Value* compile() const override{
-    Value *r;
-    ERROR("Non implemented");
-    exit(1);
-    return r;
+    return nullptr;
  }
 };
 
 
+// compile done
 class While: public Stmt {
 private:
   Expr *expr;
@@ -1113,20 +1124,34 @@ public:
     }
     stmt->sem();
   }
-  // void run() override {
-  //   while (expr->eval().boolean_value){
-  //     stmt->run();
-  //   }
-  // }
   Value* compile() const override{
-    Value *r;
-    ERROR("Non implemented");
-    exit(1);
-    return r;
+    Value *n = expr->compile();
+    BasicBlock *PrevBB = Builder.GetInsertBlock();
+    Function *TheFunction = PrevBB->getParent();
+    BasicBlock *LoopBB =
+      BasicBlock::Create(TheContext, "loop", TheFunction);
+    BasicBlock *BodyBB =
+      BasicBlock::Create(TheContext, "body", TheFunction);
+    BasicBlock *AfterBB =
+      BasicBlock::Create(TheContext, "endwhile", TheFunction);
+    Builder.CreateBr(LoopBB);
+    Builder.SetInsertPoint(LoopBB);
+    PHINode *phi_iter = Builder.CreatePHI(i32, 2, "iter");
+    phi_iter->addIncoming(n, PrevBB);
+    Value *loop_cond = Builder.CreateICmpSGT(phi_iter, c32(0), "loop_cond");
+    Builder.CreateCondBr(loop_cond, BodyBB, AfterBB);
+    Builder.SetInsertPoint(BodyBB);
+    stmt->compile();
+    n = expr->compile();
+    phi_iter->addIncoming(n, Builder.GetInsertBlock());
+    Builder.CreateBr(LoopBB);
+    Builder.SetInsertPoint(AfterBB);
+    return nullptr;
  }
 };
 
 
+// compile done
 class If: public Stmt {
 private:
   Expr *cond;
@@ -1152,18 +1177,28 @@ public:
     stmt1->sem();
     if (stmt2 != nullptr) stmt2->sem();
   }
-  // void run() override {
-  //   if (cond->eval().boolean_value)
-  //     stmt1->run();
-  //   else if (stmt2 != nullptr)
-  //     stmt2->run();
-  // }
   Value* compile() const override{
-    Value *r;
-    ERROR("Non implemented");
-    exit(1);
-    return r;
- }
+    Value *v = cond->compile();
+    Value *cond = Builder.CreateICmpNE(v, c32(0), "if_cond");
+    Function *TheFunction = Builder.GetInsertBlock()->getParent();
+    BasicBlock *ThenBB =
+      BasicBlock::Create(TheContext, "then", TheFunction);
+    BasicBlock *ElseBB =
+      BasicBlock::Create(TheContext, "else", TheFunction);
+    BasicBlock *AfterBB =
+      BasicBlock::Create(TheContext, "endif", TheFunction);
+    Builder.CreateCondBr(cond, ThenBB, ElseBB);
+    Builder.SetInsertPoint(ThenBB);
+    stmt1->compile();
+    Builder.CreateBr(AfterBB);
+    Builder.SetInsertPoint(ElseBB);
+    if (stmt2 != nullptr) {
+      stmt2->compile();
+    }
+    Builder.CreateBr(AfterBB);
+    Builder.SetInsertPoint(AfterBB);
+    return nullptr;
+  }
 };
 
 
