@@ -28,6 +28,32 @@ using namespace llvm;
 
 extern std::unordered_map<string, SymbolEntry*> globals;
 
+Type* get_llvm_type(Types t){
+  if (t->kind == TYPE_integer){
+    return IntegerType::get(TheContext, 32);
+  }
+  if (t->kind == TYPE_real){
+    return Type::getDoubleTy(TheContext);
+  }
+  if (t->kind == TYPE_boolean){
+    return IntegerType::get(TheContext, 1);
+  }
+  if (t->kind == TYPE_char){
+    return IntegerType::get(TheContext, 8);
+  }
+  if (t->kind == TYPE_arrayI){
+    return ArrayType::get(get_llvm_type(t->u.t_arrayI.type), t->u.t_arrayI.dim);
+  }
+  if (t->kind == TYPE_arrayII){
+    return PointerType::get(get_llvm_type(t->u.t_arrayII.type), 0);
+  }
+  if (t->kind == TYPE_pointer){
+    if (t->u.t_pointer.is_null){
+      return PointerType::get(Type::getVoidTy(TheContext), 0);
+    }
+    return PointerType::get(get_llvm_type(t->u.t_pointer.type), 0);
+  }
+}
 
 inline std::ostream& operator<<(std::ostream &out, Types t) {
   if ( t->kind == TYPE_integer ) {
@@ -85,6 +111,9 @@ protected:
   static Type *DoubleTyID;
 
   // Useful LLVM helper functions.
+  ConstantInt* c1(int c) const {
+    return ConstantInt::get(TheContext, APInt(1, c, true));
+  }
   ConstantInt* c8(char c) const {
     return ConstantInt::get(TheContext, APInt(8, c, true));
   }
@@ -94,6 +123,7 @@ protected:
   ConstantFP* fp(double n) const {
     return ConstantFP::get(TheContext, APFloat(n));
   }
+  ConstantArray* arr()
 /*  ConstantPointerNull null_ptr() {
     return ConstantPointerNull::get();
   }*/
@@ -172,12 +202,12 @@ inline std::ostream& operator<<(std::ostream &out, const AST &t) {
   return out;
 }
 
-
+// compile done
 class Stmt: public AST {
   //this is intentionally left empty
 };
 
-
+// compile done
 class Expr: public AST {
 protected:
   Types type;
@@ -196,7 +226,7 @@ public:
   }
 };
 
-
+// compile done
 class Expr_vector{
 private:
   std::vector<Expr *> expr_list;
@@ -212,12 +242,12 @@ public:
   }
 };
 
-
+// compile done
 class Lvalue: public Expr {
   //this is intentionally left empty
 };
 
-
+// compile done
 class Rvalue: public Expr {
   //this is intentionally left empty
 };
@@ -258,7 +288,7 @@ public:
 
 };
 
-
+// compile done
 class Id_vector{
 private:
   std::vector<Id *> id_list;
@@ -322,7 +352,7 @@ public:
  }
 };
 
-
+// compile done
 class Formal_vector{
 private:
   std::vector<Formal *> formal_list;
@@ -338,7 +368,7 @@ public:
   }
 };
 
-
+// compile almost done std::vector<bool> is_by_ref_arr;
 class Header: public AST {
 private:
   Types header_type;
@@ -444,10 +474,22 @@ public:
     }
   }
   Value* compile() const override{
-    Value *r;
-    ERROR("Non implemented");
-    exit(1);
-    return r;
+    Type* res_type;
+    std::vector<Type*> arg_types;
+    if (header_type->kind == TYPE_procedure){
+      res_type = Type::getVoidTy(TheContext);
+      for (Types arg: header_type->u.t_procedure.arg_types){
+        arg_types.push_back(get_llvm_type(arg));
+      }
+    }
+    else {
+      res_type = get_llvm_type(header_type->u.t_function.result_type);
+      for (Types arg: header_type->u.t_function.arg_types){
+        arg_types.push_back(get_llvm_type(arg));
+      }
+    }
+    FunctionType *FT = FunctionType::get(res_type, arg_types, false);
+    Function *F = Function::Create(FT, Function::ExternalLinkage, name, TheModule.get());
  }
 };
 
@@ -654,7 +696,9 @@ public:
     st.closeScope();
   }
   Value* compile() const override{
-    return body->compile();
+    header->compile();
+    body->compile();
+    return nullptr;
  }
 };
 
@@ -1061,7 +1105,7 @@ public:
     type = type_boolean();
   }
   virtual Value* compile() const override {
-    return c8(boolean == "true");
+    return c1(boolean == "true");
   }
 };
 
@@ -1468,4 +1512,3 @@ public:
     return r;
  }
 };
-
