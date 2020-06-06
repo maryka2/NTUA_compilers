@@ -32,18 +32,6 @@ void delete_type(Types t) {
   //free(t);   FIXME
 }
 
-bool equal_strings(Types t1, Types t2, myValue v1, myValue v2){
-  if (t1->u.t_arrayI.dim != t1->u.t_arrayI.dim){
-    return false;
-  }
-  for (int index = 0; index < t1->u.t_arrayI.dim; index++){
-    if (((char *)v1.arrayI_value)[index] != ((char *)v2.arrayI_value)[index]){
-      return false;
-    }
-  }
-  return true;
-}
-
 bool is_string(Types t){
   return (t->kind == TYPE_arrayI && t->u.t_arrayI.type->kind == TYPE_char);
 }

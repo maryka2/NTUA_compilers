@@ -50,18 +50,7 @@ struct Types_tag {
     } u;
 };
 
-union myValue {
-  int integer_value;
-  double real_value;
-  bool boolean_value;
-  char char_value;
-  void *arrayI_value;
-  void *arrayII_value;
-  void *pointer_value;
-};
-
 void delete_type(Types t);
-bool equal_strings(Types t1, Types t2, myValue v1, myValue v2);
 bool is_string(Types t);
 bool equal_types(Types t1, Types t2);
 bool assignable_types(Types t1, Types t2);

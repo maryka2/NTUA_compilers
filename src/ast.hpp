@@ -10,7 +10,6 @@
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/LegacyPassManager.h>
 #include <llvm/IR/Module.h>
-#include <llvm/IR/Value.h>
 #include <llvm/IR/Verifier.h>
 #include <llvm/Support/raw_ostream.h>
 #include <llvm/Transforms/Scalar.h>
@@ -26,7 +25,9 @@ using namespace llvm;
   exit(1);
 }*/
 
+
 extern std::unordered_map<string, SymbolEntry*> globals;
+
 
 Type* get_llvm_type(Types t){
   if (t->kind == TYPE_integer){
@@ -54,6 +55,7 @@ Type* get_llvm_type(Types t){
     return PointerType::get(get_llvm_type(t->u.t_pointer.type), 0);
   }
 }
+
 
 inline std::ostream& operator<<(std::ostream &out, Types t) {
   if ( t->kind == TYPE_integer ) {
@@ -89,6 +91,7 @@ inline std::ostream& operator<<(std::ostream &out, Types t) {
   return out;
 }
 
+
 class AST {
 protected:
   // Global LLVM variables related to the LLVM suite.
@@ -109,6 +112,7 @@ protected:
   static Type *i32;
   static Type *i64;
   static Type *DoubleTyID;
+  static Type *LabelTyID;
 
   // Useful LLVM helper functions.
   ConstantInt* c1(int c) const {
@@ -202,10 +206,12 @@ inline std::ostream& operator<<(std::ostream &out, const AST &t) {
   return out;
 }
 
+
 // compile done
 class Stmt: public AST {
   //this is intentionally left empty
 };
+
 
 // compile done
 class Expr: public AST {
@@ -226,6 +232,7 @@ public:
   }
 };
 
+
 // compile done
 class Expr_vector{
 private:
@@ -242,10 +249,12 @@ public:
   }
 };
 
+
 // compile done
 class Lvalue: public Expr {
   //this is intentionally left empty
 };
+
 
 // compile done
 class Rvalue: public Expr {
@@ -253,6 +262,7 @@ class Rvalue: public Expr {
 };
 
 
+// compile done
 class Id: public Lvalue {
 private:
   string var;
@@ -267,12 +277,12 @@ public:
   void insertIntoCurrentScope() {
     st.insert(var, type);
   }
+  string get_name() {
+    return var;
+  }
   void printOn(std::ostream &out) const override {
     out << "Id(" << var << ")\n";
   }
-  // Value eval() override {
-  //   return globals[var]->value;
-  // }
   void sem() override {
     SymbolEntry *e = st.lookup(var);
     if (e != nullptr) {
@@ -280,13 +290,15 @@ public:
     }
   }
   Value* compile() const override{
-    Value *r;
-    ERROR("Non implemented");
-    exit(1);
-    return r;
- }
-
+    SymbolEntry *e = st.lookup(var);
+    if (e != nullptr) {
+      type = e->type;
+      return e->value;
+    }
+    return nullptr;
+  }
 };
+
 
 // compile done
 class Id_vector{
@@ -305,6 +317,7 @@ public:
 };
 
 
+// compile done
 class Formal: public AST {
 private:
   std::vector<Id*> var_name_list;
@@ -339,6 +352,13 @@ public:
   bool get_is_by_ref() {
     return is_by_ref;
   }
+  std::vector<string> get_arg_names() {
+    std::vector<string> arg_names;
+    for (Id *id: var_name_list) {
+      arg_names.push_back(id->get_name());
+    }
+    return arg_names;
+  }
   void sem() override {
     for (Id* id: var_name_list) {
       id->insertIntoCurrentScope();
@@ -351,6 +371,7 @@ public:
     return r;
  }
 };
+
 
 // compile done
 class Formal_vector{
@@ -367,6 +388,7 @@ public:
     return formal_list;
   }
 };
+
 
 // compile almost done std::vector<bool> is_by_ref_arr;
 class Header: public AST {
@@ -490,7 +512,18 @@ public:
     }
     FunctionType *FT = FunctionType::get(res_type, arg_types, false);
     Function *F = Function::Create(FT, Function::ExternalLinkage, name, TheModule.get());
- }
+    vector<string> arg_names;
+    for (Formal *f: formal_list) {
+      for (string arg_name: f->get_arg_names()) {
+        arg_names.push_back(arg_name);
+      }
+    }
+    unsigned Idx = 0;
+    for (auto &Arg : F->args()) {
+      Arg.setName(arg_names[Idx++]);
+    }
+    return F;
+  }
 };
 
 
@@ -788,7 +821,7 @@ public:
 };
 
 
-// compile almost done (string, real type cast)
+// compile almost done (string)
 class BinOp: public Rvalue {
 private:
   Expr *left;
@@ -866,11 +899,15 @@ public:
   Value* compile() const override{
     Value *lv = left->compile();
     Value *rv = right->compile();
+    if (!lv || !rv) {
+      return nullptr;
+    }
+    sem();  // NOTE: We can use sem() for type checks because it does not call other sems.
     if (left->type_check(TYPE_integer) && right->type_check(TYPE_real)) {
-      lv = Builder.SIToFPInst(lv, DoubleTyID);
+      lv = Builder.CreateSIToFP(lv, Type::getDoubleTy(TheContext), "int2floattmp");
     }
     else if (left->type_check(TYPE_real) && right->type_check(TYPE_integer)) {
-      rv = Builder.SIToFPInst(rv, DoubleTyID);
+      rv = Builder.CreateSIToFP(rv, Type::getDoubleTy(TheContext), "int2floattmp");
     }
     // pif fix real - int
     if ( op == "+") {
@@ -1246,11 +1283,12 @@ public:
 };
 
 
+// compile done (ArgsV.back() nullptr, by ref)
 class Call: public Stmt, public Rvalue {
 private:
   string name;
   std::vector<Expr*> expr_list;
-  bool is_stmt=false;
+  bool is_stmt = false;
 public:
   Call(string n) : name(n) {}
   Call(string n, Expr_vector *ev) : name(n) {
@@ -1316,11 +1354,24 @@ public:
     }
   }
   Value* compile() const override{
-    Value *r;
-    ERROR("Non implemented");
-    exit(1);
-    return r;
- }
+    // Look up the name in the global module table.
+    Function *CalleeF = TheModule->getFunction(name);
+    if (!CalleeF) {
+      return ERROR("Unknown function/procedure referenced.");
+    }
+    // If argument mismatch error.
+    if (CalleeF->arg_size() != expr_list.size()) {
+      return ERROR("Incorrect number of arguments passed.");
+    }
+    std::vector<Value *> ArgsV;
+    for (unsigned i = 0; i < expr_list.size(); ++i) {
+      ArgsV.push_back(expr_list[i]->compile());
+      if (!ArgsV.back()) {
+        return nullptr;
+      }
+    }
+    return Builder.CreateCall(CalleeF, ArgsV, "call" + name + "tmp");
+  }
 };
 
 

@@ -1,13 +1,14 @@
 #include <iostream>
 #include <vector>
 #include <unordered_map>
+#include <llvm/IR/Value.h>
 #include "type.hpp"
 using namespace std;
 
 // SymbolEntry is a small box in the data stack
 struct SymbolEntry {
   Types type;  // Variable's type
-  myValue value;
+  Value *value;
   SymbolEntry *next;  // A pointer to the next SymbolEntry with the same name, or NULL if such a variable doesn't exist
   SymbolEntry() {}
   SymbolEntry(Types t, SymbolEntry *n) : type(t), next(n) {}  // Initializer
@@ -63,10 +64,10 @@ public:
     scopes.pop_back();  // Remove top scope
   };
   SymbolEntry *lookup(string c) {
-     if (globals.find(c) == globals.end()) {
+    if (globals.find(c) == globals.end()) {
       return nullptr;
-     }
-      return globals[c];  // If variable exists return pointer to its SymbolEntry
+    }
+    return globals[c];  // If variable exists return pointer to its SymbolEntry
   }
   void insert(string c, Types t) {
     SymbolEntry *n;  // Pointer to next variable with the same name
