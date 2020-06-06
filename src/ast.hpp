@@ -444,6 +444,13 @@ public:
     }
     out << "\n";
   }
+  std::vector<Types> get_arg_types(){
+    std::vector<Types> res;
+    for (Formal *f: formal_list){
+      res.push_back(f->get_formal_type());
+    }
+    return res;
+  }
   void set_forward(){
     if (header_type->kind == TYPE_function){
       header_type->u.t_function.is_forward = true;
@@ -496,6 +503,10 @@ public:
     }
   }
   Value* compile() const override{
+    Function *F = TheModule->getFunction(name);
+    if (F) { // function has already been declared (forward)
+      return F;
+    }
     Type* res_type;
     std::vector<Type*> arg_types;
     if (header_type->kind == TYPE_procedure){
@@ -511,7 +522,7 @@ public:
       }
     }
     FunctionType *FT = FunctionType::get(res_type, arg_types, false);
-    Function *F = Function::Create(FT, Function::ExternalLinkage, name, TheModule.get());
+    F = Function::Create(FT, Function::ExternalLinkage, name, TheModule.get());
     vector<string> arg_names;
     for (Formal *f: formal_list) {
       for (string arg_name: f->get_arg_names()) {
@@ -587,7 +598,10 @@ public:
       header->sem_outter_scope();
     }
   }
-  Value* compile() const override{
+  virtual Value* compile() const override{
+    if (local_type==1){
+      return header->compile();
+    }
     return nullptr;
  }
 };
@@ -729,10 +743,28 @@ public:
     st.closeScope();
   }
   Value* compile() const override{
-    header->compile();
-    body->compile();
+    st.openScope();
+    Function *TheFunction = header->compile();
+    BasicBlock *BB = BasicBlock::Create(TheContext, "entry", TheFunction);
+    Builder.SetInsertPoint(BB);
+
+    std::vector<Types> arg_types = header->get_arg_types();
+
+    unsigned int idx = 0;
+    for (auto &Arg : TheFunction->args()){
+      st.insert(Arg.getName(), arg_types[idx++], &Arg);
+    }
+
+    if (Value *RetVal = body->compile()) {
+      Builder.CreateRet(RetVal);
+      verifyFunction(*TheFunction);
+      st.closeScope();
+      return TheFunction;
+    }
+    TheFunction->eraseFromParent();
+    st.closeScope();
     return nullptr;
- }
+  }
 };
 
 

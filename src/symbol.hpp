@@ -12,6 +12,7 @@ struct SymbolEntry {
   SymbolEntry *next;  // A pointer to the next SymbolEntry with the same name, or NULL if such a variable doesn't exist
   SymbolEntry() {}
   SymbolEntry(Types t, SymbolEntry *n) : type(t), next(n) {}  // Initializer
+  SymbolEntry(Types t, SymbolEntry *n, Value *v) : type(t), next(n), value(v) {}  // Initializer
 };
 
 extern std::unordered_map<string, SymbolEntry*> globals;
@@ -29,6 +30,15 @@ public:
       exit(1);
     }
     locals[c] = SymbolEntry(t, n);  // Create new variable
+    return &(locals[c]);  // Return pointer to the new variable
+  }
+  SymbolEntry *insert(string c, Types t, SymbolEntry *n, Value *v) {
+    if (locals.find(c) != locals.end()) {  // Check if there is already a variable with name equal to c in this scope
+      // If we are here there is already a variable with the name with that name
+      std::cerr << ("Duplicate variable " + c);  // Print error message
+      exit(1);
+    }
+    locals[c] = SymbolEntry(t, n, v);  // Create new variable
     return &(locals[c]);  // Return pointer to the new variable
   }
 };
@@ -74,6 +84,12 @@ public:
     if (globals.find(c) == globals.end()) n = nullptr;  // If it doesn't exist point to nullptr
     else n = globals[c];  // else point to it
     globals[c] = scopes.back()->insert(c, t, n); // Insert SymbolEntry to top Scope
+  }
+  void insert(string c, Types t, Value *v) {
+    SymbolEntry *n;  // Pointer to next variable with the same name
+    if (globals.find(c) == globals.end()) n = nullptr;  // If it doesn't exist point to nullptr
+    else n = globals[c];  // else point to it
+    globals[c] = scopes.back()->insert(c, t, n, v); // Insert SymbolEntry to top Scope
   }
   int getSizeOfCurrentScope() {
     return scopes.back()->locals.size();
