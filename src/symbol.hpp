@@ -3,27 +3,28 @@
 #include <unordered_map>
 #include <llvm/IR/Value.h>
 #include "type.hpp"
-using namespace std;
+
+using namespace llvm;
 
 // SymbolEntry is a small box in the data stack
 struct SymbolEntry {
   Types type;  // Variable's type
   Value *value;
   SymbolEntry *next;  // A pointer to the next SymbolEntry with the same name, or NULL if such a variable doesn't exist
-  SymbolEntry() {}
+  SymbolEntry() : value(nullptr), next(nullptr) {}
   SymbolEntry(Types t, SymbolEntry *n) : type(t), next(n) {}  // Initializer
-  SymbolEntry(Types t, SymbolEntry *n, Value *v) : type(t), next(n), value(v) {}  // Initializer
+  SymbolEntry(Types t, SymbolEntry *n, Value *v) : type(t), value(v), next(n) {}  // Initializer
 };
 
-extern std::unordered_map<string, SymbolEntry*> globals;
+extern std::unordered_map<std::string, SymbolEntry*> globals;
 
 // Scope is a big box in the data stack
 class Scope {
 public:
-  unordered_map<string, SymbolEntry> locals;  // Hash-map matching variable names to SymbolEntries
+  std::unordered_map<std::string, SymbolEntry> locals;  // Hash-map matching variable names to SymbolEntries
 
   Scope() {}  // Initializer: hash map locals is empty
-  SymbolEntry *insert(string c, Types t, SymbolEntry *n) {
+  SymbolEntry *insert(std::string c, Types t, SymbolEntry *n) {
     if (locals.find(c) != locals.end()) {  // Check if there is already a variable with name equal to c in this scope
       // If we are here there is already a variable with the name with that name
       std::cerr << ("Duplicate variable " + c);  // Print error message
@@ -32,7 +33,7 @@ public:
     locals[c] = SymbolEntry(t, n);  // Create new variable
     return &(locals[c]);  // Return pointer to the new variable
   }
-  SymbolEntry *insert(string c, Types t, SymbolEntry *n, Value *v) {
+  SymbolEntry *insert(std::string c, Types t, SymbolEntry *n, Value *v) {
     if (locals.find(c) != locals.end()) {  // Check if there is already a variable with name equal to c in this scope
       // If we are here there is already a variable with the name with that name
       std::cerr << ("Duplicate variable " + c);  // Print error message
@@ -49,7 +50,7 @@ public:
    scopes.push_back(new Scope());  // Push new scope on the top of data stack
   }
   void closeScope() {  // Removes top scope
-    for (unordered_map<string, SymbolEntry>::iterator it = scopes.back()->locals.begin(); it != scopes.back()->locals.end(); it++) {
+    for (std::unordered_map<std::string, SymbolEntry>::iterator it = scopes.back()->locals.begin(); it != scopes.back()->locals.end(); it++) {
       // For every variable (SymbolEntry) of the top scope
       SymbolEntry e = it->second;
       if (e.type->kind == TYPE_label && e.type->u.t_label.is_called && !e.type->u.t_label.is_defined) {
@@ -73,19 +74,19 @@ public:
     }
     scopes.pop_back();  // Remove top scope
   };
-  SymbolEntry *lookup(string c) {
+  SymbolEntry *lookup(std::string c) {
     if (globals.find(c) == globals.end()) {
       return nullptr;
     }
     return globals[c];  // If variable exists return pointer to its SymbolEntry
   }
-  void insert(string c, Types t) {
+  void insert(std::string c, Types t) {
     SymbolEntry *n;  // Pointer to next variable with the same name
     if (globals.find(c) == globals.end()) n = nullptr;  // If it doesn't exist point to nullptr
     else n = globals[c];  // else point to it
     globals[c] = scopes.back()->insert(c, t, n); // Insert SymbolEntry to top Scope
   }
-  void insert(string c, Types t, Value *v) {
+  void insert(std::string c, Types t, Value *v) {
     SymbolEntry *n;  // Pointer to next variable with the same name
     if (globals.find(c) == globals.end()) n = nullptr;  // If it doesn't exist point to nullptr
     else n = globals[c];  // else point to it
