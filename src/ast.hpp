@@ -82,6 +82,7 @@ protected:
   static Function *TheWriteString;
 
   // Useful LLVM types.
+  static Type *i1;
   static Type *i8;
   static Type *i32;
   static Type *i64;
