@@ -7,3 +7,6 @@ src/parser.cpp
 src/parser.hpp
 src/pcl
 src/pcl.exe
+src/a.ll
+src/a.out
+src/a.s
