@@ -1184,7 +1184,7 @@ YY_RULE_SETUP
 case 57:
 YY_RULE_SETUP
 #line 79 "lexer.l"
-{ yylval.c = yytext[0]; return T_charconst; }
+{ yylval.c = yytext[1]; return T_charconst; }
 	YY_BREAK
 case 58:
 YY_RULE_SETUP

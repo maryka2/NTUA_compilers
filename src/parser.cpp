@@ -1514,7 +1514,7 @@ yyreduce:
     {
         case 2:
 #line 141 "parser.ypp" /* yacc.c:1646  */
-    {/* define_predefined_functions(); */ (yyvsp[-1].block)->block_is_program(); (yyvsp[-1].block)->sem(); (yyvsp[-1].block)->llvm_compile_and_dump(); (yyval.block) = (yyvsp[-1].block); /* st.closeScope();*/ }
+    {/* define_predefined_functions(); */ (yyvsp[-1].block)->block_is_program(); (yyvsp[-1].block)->sem(); (yyvsp[-1].block)->llvm_compile_and_dump(); (yyvsp[-1].block)->printOn(std::cout); (yyval.block) = (yyvsp[-1].block); /* st.closeScope();*/ }
 #line 1519 "parser.cpp" /* yacc.c:1646  */
     break;
 

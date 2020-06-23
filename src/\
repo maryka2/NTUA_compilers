@@ -655,15 +655,12 @@ public:
       first = false;
       out << *l;
     }
-    out << "; ";
-    first = true;
     for (Stmt *s : stmt_list) {
       if (!first) out << ", ";
       first = false;
       out << *s;
     }
-    out << ")";
-    out << "\n";
+    out << ")\n";
   }
   void block_is_program(){
     is_program = true;
@@ -1212,7 +1209,7 @@ public:
     // This is intentionally left empty
   }
   void printOn(std::ostream &out) const override {
-    out << "Intconst(" << num << ")";
+    out << "Intconst(" << num << ")\n";
   }
   void sem() override {
     type = type_integer();
@@ -1360,11 +1357,10 @@ public:
     if (!expr_list.empty()){
       out << " with arguments ";
     }
-    out << expr_list.size();
     for (Expr *expr : expr_list){
-      out << *expr << ": ";
+      out << *expr << ' ';
     }
-    //out << "\n";
+    out << "\n";
   }
   void is_statement() {
     is_stmt = true;
@@ -1620,4 +1616,5 @@ public:
     return r;
  }
 };
+
 
