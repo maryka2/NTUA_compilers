@@ -1,4 +1,5 @@
 program test;
 begin
-writeInteger(1);
+writeInteger(14);
+writeInteger(17)
 end.

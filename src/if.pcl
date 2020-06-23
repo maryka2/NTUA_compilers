@@ -1,0 +1,8 @@
+program test;
+begin
+  writeInteger(14);
+  if not true then
+    writeInteger(17)
+  else
+    writeInteger(42)
+end.

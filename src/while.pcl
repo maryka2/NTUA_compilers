@@ -1,0 +1,9 @@
+program test;
+begin
+  writeInteger(14);
+  while 1 > 0 do
+  begin
+    writeInteger(17)
+  end;
+  writeInteger(42)
+end.

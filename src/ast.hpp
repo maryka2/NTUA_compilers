@@ -1261,9 +1261,9 @@ public:
       BasicBlock::Create(TheContext, "endwhile", TheFunction);
     Builder.CreateBr(LoopBB);
     Builder.SetInsertPoint(LoopBB);
-    PHINode *phi_iter = Builder.CreatePHI(i32, 2, "iter");
+    PHINode *phi_iter = Builder.CreatePHI(i1, 2, "iter");
     phi_iter->addIncoming(n, PrevBB);
-    Value *loop_cond = Builder.CreateICmpSGT(phi_iter, c32(0), "loop_cond");
+    Value *loop_cond = Builder.CreateICmpNE(phi_iter, c1(0), "loop_cond");
     Builder.CreateCondBr(loop_cond, BodyBB, AfterBB);
     Builder.SetInsertPoint(BodyBB);
     stmt->compile();
@@ -1414,7 +1414,8 @@ public:
         return nullptr;
       }
     }
-    return Builder.CreateCall(CalleeF, ArgsV, "call" + name + "tmp");
+    //return Builder.CreateCall(CalleeF, ArgsV, "call" + name + "tmp");
+    return Builder.CreateCall(CalleeF, ArgsV);
   }
 };
 
