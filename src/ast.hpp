@@ -1360,7 +1360,6 @@ public:
     if (!expr_list.empty()){
       out << " with arguments ";
     }
-    out << expr_list.size();
     for (Expr *expr : expr_list){
       out << *expr << ": ";
     }
