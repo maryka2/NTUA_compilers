@@ -1,0 +1,4 @@
+program tst;
+begin
+  writeInteger(readInteger()+7)
+end.

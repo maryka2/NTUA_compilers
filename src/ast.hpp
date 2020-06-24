@@ -81,6 +81,7 @@ protected:
   static Function *TheWriteInteger;
   static Function *TheWriteString;
   static Function *TheWriteChar;
+  static Function *TheReadInteger;
 
   // Useful LLVM types.
   static Type *i1;
@@ -178,6 +179,13 @@ public:
     TheWriteInteger =
       Function::Create(writeInteger_type, Function::ExternalLinkage,
                        "writeInteger", TheModule.get());
+    // declare void @readInteger(i64)
+    FunctionType *readInteger_type =
+      FunctionType::get(i64,
+                        std::vector<Type *> { }, false);
+    TheReadInteger =
+      Function::Create(readInteger_type, Function::ExternalLinkage,
+                       "readInteger", TheModule.get());
     // declare void @writeString(i8*)
     FunctionType *writeString_type =
       FunctionType::get(Type::getVoidTy(TheContext),
@@ -189,7 +197,7 @@ public:
     FunctionType *writeChar_type =
       FunctionType::get(Type::getVoidTy(TheContext),
                         std::vector<Type *> { i8 }, false);
-    TheWriteInteger =
+    TheWriteChar =
       Function::Create(writeChar_type, Function::ExternalLinkage,
                        "writeChar", TheModule.get());
     // Define and start the main function.
@@ -1416,7 +1424,7 @@ public:
     }
     // If argument mismatch error.
     if (CalleeF->arg_size() != expr_list.size()) {
-      ERROR("Incorrect number of arguments passed.");
+      ERROR("Incorrect number of arguments passed."+name+ std::to_string(CalleeF->arg_size())+' ' +std::to_string(expr_list.size()));
     }
     std::vector<Value *> ArgsV;
     for (unsigned i = 0; i < expr_list.size(); ++i) {
@@ -1619,4 +1627,3 @@ public:
     return r;
  }
 };
-

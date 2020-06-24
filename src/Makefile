@@ -13,8 +13,8 @@ lexer.o: lexer.cpp lexer.hpp parser.hpp ast.hpp symbol.hpp
 
 lexer: lexer.o
 
-parser.hpp parser.cpp: parser.ypp
-	bison -dv -o parser.cpp parser.ypp
+parser.hpp parser.cpp: parser.y
+	bison -dv -o parser.cpp parser.y
 
 parser.o: parser.cpp lexer.hpp ast.hpp symbol.hpp type.cpp
 
