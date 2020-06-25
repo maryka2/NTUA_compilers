@@ -1,0 +1,9 @@
+program test;
+procedure writeProc();
+begin
+  (*writeInteger(14)*)
+end;
+
+begin
+
+end.
