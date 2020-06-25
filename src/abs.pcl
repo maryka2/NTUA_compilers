@@ -1,0 +1,6 @@
+program test;
+begin
+  writeInteger(14);
+  writeInteger(abs(-14));
+  writeInteger(trunc(4.2))
+end.

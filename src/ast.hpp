@@ -78,10 +78,32 @@ protected:
   static GlobalVariable *TheVars;
   static GlobalVariable *TheRealVars;
   static GlobalVariable *TheNL;
+
+  // Predefined subroutines
   static Function *TheWriteInteger;
-  static Function *TheWriteString;
+  static Function *TheWriteBoolean;
   static Function *TheWriteChar;
+  static Function *TheWriteReal;
+  static Function *TheWriteString;
   static Function *TheReadInteger;
+  static Function *TheReadBoolean;
+  static Function *TheReadChar;
+  static Function *TheReadReal;
+  static Function *TheReadString;
+  static Function *TheAbs;
+  static Function *TheFabs;
+  static Function *TheSqrt;
+  static Function *TheSin;
+  static Function *TheCos;
+  static Function *TheTan;
+  static Function *TheArctan;
+  static Function *TheExp;
+  static Function *TheLn;
+  static Function *ThePi;
+  static Function *TheTrunc;
+  static Function *TheRound;
+  static Function *TheOrd;
+  static Function *TheChr;
 
   // Useful LLVM types.
   static Type *i1;
@@ -172,6 +194,7 @@ public:
           std::vector<Constant *> { c8('\n'), c8('\0') }
         ), "nl");
     TheNL->setAlignment(1);
+
     // declare void @writeInteger(i64)
     FunctionType *writeInteger_type =
       FunctionType::get(Type::getVoidTy(TheContext),
@@ -179,20 +202,14 @@ public:
     TheWriteInteger =
       Function::Create(writeInteger_type, Function::ExternalLinkage,
                        "writeInteger", TheModule.get());
-    // declare void @readInteger(i64)
-    FunctionType *readInteger_type =
-      FunctionType::get(i64,
-                        std::vector<Type *> { }, false);
-    TheReadInteger =
-      Function::Create(readInteger_type, Function::ExternalLinkage,
-                       "readInteger", TheModule.get());
-    // declare void @writeString(i8*)
-    FunctionType *writeString_type =
+    // declare void @writeBoolean(i1)
+    FunctionType *writeBoolean_type =
       FunctionType::get(Type::getVoidTy(TheContext),
-                        std::vector<Type *> { PointerType::get(i8, 0) }, false);
-    TheWriteString =
-      Function::Create(writeString_type, Function::ExternalLinkage,
-                       "writeString", TheModule.get());
+                        std::vector<Type *> { i1 }, false);
+    TheWriteBoolean =
+      Function::Create(writeBoolean_type, Function::ExternalLinkage,
+                       "writeBoolean", TheModule.get());
+
     // declare void @writeChar(i8)
     FunctionType *writeChar_type =
       FunctionType::get(Type::getVoidTy(TheContext),
@@ -200,6 +217,175 @@ public:
     TheWriteChar =
       Function::Create(writeChar_type, Function::ExternalLinkage,
                        "writeChar", TheModule.get());
+
+    // declare void @readInteger(i64)
+    FunctionType *readInteger_type =
+      FunctionType::get(i64,
+                        std::vector<Type *> { }, false);
+    TheReadInteger =
+      Function::Create(readInteger_type, Function::ExternalLinkage,
+                       "readInteger", TheModule.get());
+    
+    // declare void @writeString(i8*)
+    FunctionType *writeString_type =
+      FunctionType::get(Type::getVoidTy(TheContext),
+                        std::vector<Type *> { PointerType::get(i8, 0) }, false);
+    TheWriteString =
+      Function::Create(writeString_type, Function::ExternalLinkage,
+                       "writeString", TheModule.get());
+
+    // declare void @writeReal(DoubleTyID)
+    FunctionType *writeReal_type =
+      FunctionType::get(Type::getVoidTy(TheContext),
+                        std::vector<Type *> { DoubleTyID }, false);
+    TheWriteReal =
+      Function::Create(writeReal_type, Function::ExternalLinkage,
+                       "writeReal", TheModule.get());
+
+    // declare i1 @readBoolean()
+    FunctionType *readBoolean_type =
+      FunctionType::get(i1,
+                        std::vector<Type *> {  }, false);
+    TheReadBoolean =
+      Function::Create(readBoolean_type, Function::ExternalLinkage,
+                       "readBoolean", TheModule.get());
+
+    // declare i8 @readChar()
+    FunctionType *readChar_type =
+      FunctionType::get(i8,
+                        std::vector<Type *> {  }, false);
+    TheReadChar =
+      Function::Create(readChar_type, Function::ExternalLinkage,
+                       "readChar", TheModule.get());
+
+    // declare DoubleTyID @readReal()
+    FunctionType *readReal_type =
+      FunctionType::get(DoubleTyID,
+                        std::vector<Type *> {  }, false);
+    TheReadReal =
+      Function::Create(readReal_type, Function::ExternalLinkage,
+                       "readReal", TheModule.get());
+
+    // declare PointerType::get(i8, 0) @readString()
+    FunctionType *readString_type =
+      FunctionType::get(PointerType::get(i8, 0),
+                        std::vector<Type *> {  }, false);
+    TheReadString =
+      Function::Create(readString_type, Function::ExternalLinkage,
+                       "readString", TheModule.get());
+
+    // declare i64 @abs(i64)
+    FunctionType *abs_type =
+      FunctionType::get(i64,
+                        std::vector<Type *> { i64 }, false);
+    TheAbs =
+      Function::Create(abs_type, Function::ExternalLinkage,
+                       "abs", TheModule.get());
+
+    // declare DoubleTyID @fabs(DoubleTyID)
+    FunctionType *fabs_type =
+      FunctionType::get(DoubleTyID,
+                        std::vector<Type *> { DoubleTyID }, false);
+    TheFabs =
+      Function::Create(fabs_type, Function::ExternalLinkage,
+                       "fabs", TheModule.get());
+
+    // declare DoubleTyID @sqrt(DoubleTyID)
+    FunctionType *sqrt_type =
+      FunctionType::get(DoubleTyID,
+                        std::vector<Type *> { DoubleTyID }, false);
+    TheSqrt =
+      Function::Create(sqrt_type, Function::ExternalLinkage,
+                       "sqrt", TheModule.get());
+
+    // declare DoubleTyID @sin(DoubleTyID)
+    FunctionType *sin_type =
+      FunctionType::get(DoubleTyID,
+                        std::vector<Type *> { DoubleTyID }, false);
+    TheSin =
+      Function::Create(sin_type, Function::ExternalLinkage,
+                       "sin", TheModule.get());
+
+    // declare DoubleTyID @cos(DoubleTyID)
+    FunctionType *cos_type =
+      FunctionType::get(DoubleTyID,
+                        std::vector<Type *> { DoubleTyID }, false);
+    TheCos =
+      Function::Create(cos_type, Function::ExternalLinkage,
+                       "cos", TheModule.get());
+
+    // declare DoubleTyID @tan(DoubleTyID)
+    FunctionType *tan_type =
+      FunctionType::get(DoubleTyID,
+                        std::vector<Type *> { DoubleTyID }, false);
+    TheTan =
+      Function::Create(tan_type, Function::ExternalLinkage,
+                       "tan", TheModule.get());
+
+    // declare DoubleTyID @arctan(DoubleTyID)
+    FunctionType *arctan_type =
+      FunctionType::get(DoubleTyID,
+                        std::vector<Type *> { DoubleTyID }, false);
+    TheArctan =
+      Function::Create(arctan_type, Function::ExternalLinkage,
+                       "arctan", TheModule.get());
+
+    // declare DoubleTyID @exp(DoubleTyID)
+    FunctionType *exp_type =
+      FunctionType::get(DoubleTyID,
+                        std::vector<Type *> { DoubleTyID }, false);
+    TheExp =
+      Function::Create(exp_type, Function::ExternalLinkage,
+                       "exp", TheModule.get());
+
+    // declare DoubleTyID @ln(DoubleTyID)
+    FunctionType *ln_type =
+      FunctionType::get(DoubleTyID,
+                        std::vector<Type *> { DoubleTyID }, false);
+    TheLn =
+      Function::Create(ln_type, Function::ExternalLinkage,
+                       "ln", TheModule.get());
+
+    // declare DoubleTyID @pi()
+    FunctionType *pi_type =
+      FunctionType::get(DoubleTyID,
+                        std::vector<Type *> {  }, false);
+    ThePi =
+      Function::Create(pi_type, Function::ExternalLinkage,
+                       "pi", TheModule.get());
+
+    // declare i64 @trunc(DoubleTyID)
+    FunctionType *trunc_type =
+      FunctionType::get(i64,
+                        std::vector<Type *> { DoubleTyID }, false);
+    TheTrunc =
+      Function::Create(trunc_type, Function::ExternalLinkage,
+                       "trunc", TheModule.get());
+
+    // declare i64 @round(DoubleTyID)
+    FunctionType *round_type =
+      FunctionType::get(i64,
+                        std::vector<Type *> { DoubleTyID }, false);
+    TheRound =
+      Function::Create(round_type, Function::ExternalLinkage,
+                       "round", TheModule.get());
+
+    // declare i8 @ord(i64)
+    FunctionType *ord_type =
+      FunctionType::get(i8,
+                        std::vector<Type *> { i64 }, false);
+    TheOrd =
+      Function::Create(ord_type, Function::ExternalLinkage,
+                       "ord", TheModule.get());
+
+    // declare i64 @chr(i8)
+    FunctionType *chr_type =
+      FunctionType::get(i64,
+                        std::vector<Type *> { i8 }, false);
+    TheChr =
+      Function::Create(chr_type, Function::ExternalLinkage,
+                       "chr", TheModule.get());
+
     // Define and start the main function.
     Function *main =
       cast<Function>(TheModule->getOrInsertFunction("main", i32));
@@ -733,7 +919,8 @@ public:
       id->set_type(type_real());
       (new Header("ln",  new Formal_vector(new Formal(new Id_vector(id), type_real())), type_real() ))->sem_outter_scope(true);
       (new Header("pi",  type_real() ))->sem_outter_scope(true);
-
+      (new Header("trunc",  new Formal_vector(new Formal(new Id_vector(id), type_real())), type_integer() ))->sem_outter_scope(true);
+      (new Header("round",  new Formal_vector(new Formal(new Id_vector(id), type_real())), type_integer() ))->sem_outter_scope(true);
     }
     for (Local *l : local_list) l->sem();
     for (Stmt *s : stmt_list) s->sem();
