@@ -458,7 +458,7 @@ public:
 
 // compile done
 class Lvalue: public Expr {
-  //this is intentionally left empty
+  virtual Value* compile_store() const = 0;
 };
 
 
@@ -499,9 +499,14 @@ public:
     SymbolEntry *e = st.lookup(var);
     if (e != nullptr) {
       type = e->type;
-      return e->value;
+      return Builder.CreateLoad(e->value, var);
     }
     return nullptr;
+  }
+  Value* compile_store() override{
+    SymbolEntry *e = st.lookup(var);
+    AllocaInst *Alloca = e->value();
+    return Alloca;
   }
 };
 
@@ -813,6 +818,7 @@ public:
     }
   }
   virtual Value* compile() override{
+    sem();
     if (local_type==1){
       return header->compile();
     }
@@ -1008,7 +1014,9 @@ public:
     ERROR("Non implemented");
     exit(1);
     return r;
- }
+  }
+  Value* compile_store() override{
+  }
 };
 
 
@@ -1044,7 +1052,9 @@ public:
     ERROR("Non implemented");
     exit(1);
     return r;
- }
+  }
+  Value* compile_store() override{
+  }
 };
 
 
@@ -1067,7 +1077,9 @@ public:
     ERROR("Non implemented");
     exit(1);
     return r;
- }
+  }
+  Value* compile_store() override{ 
+  }
 };
 
 
@@ -1649,6 +1661,7 @@ public:
     }
   }
   Value* compile() override{
+    // lvalue->compile_store() = expr->compile()
     Value *r;
     ERROR("Non implemented");
     exit(1);
