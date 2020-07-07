@@ -466,6 +466,7 @@ public:
 
 // compile done
 class Lvalue: public Expr {
+public:
   virtual Value* compile_store() = 0;
 };
 
@@ -504,19 +505,17 @@ public:
     }
   }
   Value* compile() override{
-    /*SymbolEntry *e = st.lookup(var);
+    SymbolEntry *e = st.lookup(var);
     if (e != nullptr) {
       type = e->type;
       return Builder.CreateLoad(e->value, var);
     }
-    return nullptr;*/
     return nullptr;
   }
   Value* compile_store() override{
-    /*SymbolEntry *e = st.lookup(var);
+    SymbolEntry *e = st.lookup(var);
     AllocaInst *Alloca = e->value;
-    return Alloca;*/
-    return nullptr;
+    return Alloca;
   }
 };
 
@@ -1677,12 +1676,17 @@ public:
     }
   }
   Value* compile() override{
-    // lvalue->compile_store() = expr->compile()
-    Value *r;
-    ERROR("Non implemented");
-    exit(1);
-    return r;
- }
+    Value *Val = expr->compile();
+    if (!Val) {
+      return nullptr;
+    }
+    Value *lv = lvalue->compile_store();
+    if (!lv) {
+      ERROR("Unknown variable name");
+    }
+    Builder.CreateStore(Val, lv);
+    return Val;
+  }
 };
 
 
