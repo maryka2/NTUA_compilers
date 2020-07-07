@@ -458,7 +458,7 @@ public:
 
 // compile done
 class Lvalue: public Expr {
-  virtual Value* compile_store() const = 0;
+  virtual Value* compile_store() = 0;
 };
 
 
@@ -1016,6 +1016,10 @@ public:
     return r;
   }
   Value* compile_store() override{
+    Value *r;
+    ERROR("Non implemented");
+    exit(1);
+    return r;
   }
 };
 
