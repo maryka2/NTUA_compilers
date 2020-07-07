@@ -66,6 +66,14 @@ inline std::ostream& operator<<(std::ostream &out, Types t) {
 }
 
 
+// CreateEntryBlockAlloca - Create an alloca instruction in the entry block of
+// the function.  This is used for mutable variables etc.
+static AllocaInst *CreateEntryBlockAlloca(Function *TheFunction, const std::string &VarName, Type *VarType) {
+  IRBuilder<> TmpB(&TheFunction->getEntryBlock(), TheFunction->getEntryBlock().begin());
+  return TmpB.CreateAlloca(VarType, 0, VarName.c_str());
+}
+
+
 class AST {
 protected:
   // Global LLVM variables related to the LLVM suite.
@@ -496,17 +504,19 @@ public:
     }
   }
   Value* compile() override{
-    SymbolEntry *e = st.lookup(var);
+    /*SymbolEntry *e = st.lookup(var);
     if (e != nullptr) {
       type = e->type;
       return Builder.CreateLoad(e->value, var);
     }
+    return nullptr;*/
     return nullptr;
   }
   Value* compile_store() override{
-    SymbolEntry *e = st.lookup(var);
-    AllocaInst *Alloca = e->value();
-    return Alloca;
+    /*SymbolEntry *e = st.lookup(var);
+    AllocaInst *Alloca = e->value;
+    return Alloca;*/
+    return nullptr;
   }
 };
 
@@ -976,7 +986,9 @@ public:
 
     unsigned int idx = 0;
     for (auto &Arg : TheFunction->args()){
-      st.insert(Arg.getName(), arg_types[idx++], &Arg);
+      AllocaInst *Alloca = CreateEntryBlockAlloca(TheFunction, Arg.getName(), get_llvm_type(arg_types[idx++]));
+      Builder.CreateStore(&Arg, Alloca);
+      st.insert(Arg.getName(), arg_types[idx++], Alloca);
     }
 
     if (Value *RetVal = body->compile()) {
