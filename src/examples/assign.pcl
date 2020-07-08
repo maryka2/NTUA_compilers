@@ -1,6 +1,8 @@
 program test;
 var counter : integer;
 begin
-  counter := 1;
-  counter := counter + 1
+  counter:=1;
+  writeInteger(counter);
+  counter:= counter + 1;
+  writeInteger(counter);
 end.

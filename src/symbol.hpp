@@ -41,6 +41,7 @@ public:
       exit(1);
     }
     locals[c] = SymbolEntry(t, n, v);  // Create new variable
+
     return &(locals[c]);  // Return pointer to the new variable
   }
 };
@@ -94,6 +95,10 @@ public:
     globals[c] = scopes.back()->insert(c, t, n, v); // Insert SymbolEntry to top Scope
   }
   int getSizeOfCurrentScope() {
+    if (scopes.empty()) {
+      std::cerr << "Scopes empty (symbol.hpp).";
+      exit(1);
+    }
     return scopes.back()->locals.size();
   }
 private:

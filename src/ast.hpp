@@ -146,7 +146,7 @@ public:
   virtual void printOn(std::ostream &out) const = 0;
   Type* get_llvm_type(Types t){
     if (t->kind == TYPE_integer){
-      return IntegerType::get(TheContext, 32);
+      return IntegerType::get(TheContext, 64);
     }
     if (t->kind == TYPE_real){
       return Type::getDoubleTy(TheContext);
@@ -827,9 +827,20 @@ public:
     }
   }
   virtual Value* compile() override{
-    sem();
     if (local_type==1){
+      header->sem_outter_scope();
       return header->compile();
+    }
+    if (local_type_str == "var") {
+      for (Id* id : name_list) {
+        Types t = id->get_expr_type();
+        AllocaInst *Alloca = Builder.CreateAlloca( get_llvm_type(t), 0, id->get_name());
+        std::string n = id->get_name();
+        st.insert(n, t, Alloca);
+      }
+    }
+    else {
+      sem();
     }
     return nullptr;
  }
@@ -943,12 +954,14 @@ public:
     st.closeScope();
   }
   Value* compile() override{
+    st.openScope();
     for (Local *l: local_list) {
       l->compile();
     }
     for (Stmt *s: stmt_list) {
       s->compile();
     }
+    st.closeScope();
     return nullptr;
  }
   };
