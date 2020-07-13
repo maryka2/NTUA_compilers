@@ -134,7 +134,7 @@ protected:
   ConstantInt* c64(int n) const {
     return ConstantInt::get(TheContext, APInt(64, n, true));
   }
-  ConstantFP* fp(double n) const {
+  ConstantFP* fp(float n) const {
     return ConstantFP::get(TheContext, APFloat(n));
   }
  // ConstantArray* arr()
@@ -149,7 +149,7 @@ public:
       return IntegerType::get(TheContext, 64);
     }
     if (t->kind == TYPE_real){
-      return Type::getDoubleTy(TheContext);
+      return Type::getFloatTy(TheContext);
     }
     if (t->kind == TYPE_boolean){
       return IntegerType::get(TheContext, 1);
@@ -664,6 +664,12 @@ public:
     }
     out << "\n";
   }
+  Types get_header_type() {
+    return header_type;
+  }
+  string get_header_name() {
+    return name;
+  }
   std::vector<Types> get_arg_types(){
     std::vector<Types> res;
     for (Formal *f: formal_list){
@@ -988,11 +994,18 @@ public:
     body->sem();
     st.closeScope();
   }
-  Value* compile() override{
+  Value* compile() override {
+    header->sem_outter_scope();
     st.openScope();
     Function *TheFunction = header->compile();
-    BasicBlock *BB = BasicBlock::Create(TheContext, "entry", TheFunction);
+    BasicBlock *BB = BasicBlock::Create(TheContext, header->get_header_name(), TheFunction);
     Builder.SetInsertPoint(BB);
+
+    Types header_type = header->get_header_type();
+    if (header_type->kind == TYPE_function) {
+      AllocaInst *Alloca = CreateEntryBlockAlloca(TheFunction, "result", get_llvm_type(header_type->u.t_function.result_type));
+      st.insert("result", header_type->u.t_function.result_type, Alloca);
+    }
 
     std::vector<Types> arg_types = header->get_arg_types();
 
@@ -1002,16 +1015,20 @@ public:
       Builder.CreateStore(&Arg, Alloca);
       st.insert(Arg.getName(), arg_types[idx++], Alloca);
     }
+    
+    body->compile();
 
-    if (Value *RetVal = body->compile()) {
-      Builder.CreateRet(RetVal);
-      verifyFunction(*TheFunction);
-      st.closeScope();
-      return TheFunction;
+    if (header_type->kind == TYPE_procedure) {
+      Builder.CreateRet(nullptr);
     }
-    TheFunction->eraseFromParent();
+    else {
+      SymbolEntry *e = st.lookup("result");
+      Value *RetVal = Builder.CreateLoad(e->value, "result");
+      Builder.CreateRet(RetVal);
+    }
+    verifyFunction(*TheFunction);
     st.closeScope();
-    return nullptr;
+    return TheFunction;
   }
 };
 
@@ -1194,10 +1211,10 @@ public:
     }
     sem();  // NOTE: We can use sem() for type checks because it does not call other sems.
     if (left->type_check(TYPE_integer) && right->type_check(TYPE_real)) {
-      lv = Builder.CreateSIToFP(lv, Type::getDoubleTy(TheContext), "int2floattmp");
+      lv = Builder.CreateSIToFP(lv, Type::getFloatTy(TheContext), "int2floattmp");
     }
     else if (left->type_check(TYPE_real) && right->type_check(TYPE_integer)) {
-      rv = Builder.CreateSIToFP(rv, Type::getDoubleTy(TheContext), "int2floattmp");
+      rv = Builder.CreateSIToFP(rv, Type::getFloatTy(TheContext), "int2floattmp");
     }
     // pif fix real - int
     if ( op == "+") {
@@ -1518,7 +1535,7 @@ public:
     Builder.CreateBr(LoopBB);
     Builder.SetInsertPoint(AfterBB);
     return nullptr;
- }
+  }
 };
 
 

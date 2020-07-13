@@ -42,7 +42,7 @@ Type *AST::i1 = IntegerType::get(TheContext, 1);
 Type *AST::i8 = IntegerType::get(TheContext, 8);
 Type *AST::i32 = IntegerType::get(TheContext, 32);
 Type *AST::i64 = IntegerType::get(TheContext, 64);
-Type *AST::DoubleTyID = Type::getDoubleTy(TheContext);
+Type *AST::DoubleTyID = Type::getFloatTy(TheContext);
 
 SymbolTable st;
 std::unordered_map<string, SymbolEntry*> globals;  // Global hash table

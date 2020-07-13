@@ -1,8 +1,9 @@
 program test;
-var counter : integer;
+function not_empty():integer;
 begin
-  counter:=1;
-  writeInteger(counter);
-  counter:= counter + 1;
-  writeInteger(counter);
+ result:=14;
+end;
+var i : integer;
+begin
+ i := not_empty();
 end.
