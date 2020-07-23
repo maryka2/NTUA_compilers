@@ -1,6 +1,8 @@
 program test;
-var a : array [1] of integer;
+var a : array [2] of integer;
 begin
   a[0] := 14;
-  writeInteger(a[0])
+  a[1] := 15;
+  writeInteger(a[0]);
+  writeInteger(a[1])
 end.

@@ -194,10 +194,10 @@ public:
     }
   }
   Value* get_llvm_number_of_elements(Types t) {
-    return c32(get_number_of_elements(t));
+    return c64(get_number_of_elements(t));
   }
   Value* get_llvm_number_of_bytes(Types t) {
-    return c32(get_number_of_bytes(t));
+    return c64(get_number_of_bytes(t));
   }
   virtual void sem() {}
   virtual Value* compile() = 0;
