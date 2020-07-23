@@ -1,9 +1,16 @@
 program test;
+var i : integer;
+var j : integer;
 begin
-  writeInteger(14);
-  while 1 > 0 do
+  i := 0;
+  while i < 5 do
   begin
-    writeInteger(17)
-  end;
-  writeInteger(42)
+    j := i;
+    while j < 5 do
+    begin
+      writeInteger(j);
+      j := j + 1
+    end;
+    i := i + 1
+  end
 end.

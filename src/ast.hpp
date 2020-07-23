@@ -66,14 +66,6 @@ inline std::ostream& operator<<(std::ostream &out, Types t) {
 }
 
 
-// CreateEntryBlockAlloca - Create an alloca instruction in the entry block of
-// the function.  This is used for mutable variables etc.
-static AllocaInst *CreateEntryBlockAlloca(Function *TheFunction, const std::string &VarName, Type *VarType) {
-  IRBuilder<> TmpB(&TheFunction->getEntryBlock(), TheFunction->getEntryBlock().begin());
-  return TmpB.CreateAlloca(VarType, 0, VarName.c_str());
-}
-
-
 class AST {
 protected:
   // Global LLVM variables related to the LLVM suite.
@@ -141,6 +133,37 @@ protected:
 /*  ConstantPointerNull null_ptr() {
     return ConstantPointerNull::get();
   }*/
+  int get_number_of_elements(Types t) {
+    if (t->kind != TYPE_arrayI) {
+      return 1;
+    }
+    return t->u.t_arrayI.dim * get_number_of_elements(t->u.t_arrayI.type);
+  }
+  int get_number_of_bytes(Types t) {
+    if ( t->kind == TYPE_integer ) {
+      return 4;
+    }
+    if ( t->kind == TYPE_real ) {
+      return 4;  // TODO: If double return 8
+    }
+    if ( t->kind == TYPE_boolean ) {
+      return 1;
+    }
+    if ( t->kind == TYPE_char ) {
+      return 1;
+    }
+    if ( t->kind == TYPE_arrayI ) {
+      return t->u.t_arrayI.dim * get_number_of_bytes(t->u.t_arrayI.type);
+    }
+    if ( t->kind == TYPE_arrayII ) {
+      return 0;  // FIXME
+    }
+    if ( t->kind == TYPE_pointer ) {
+      return 0;  // FIXME
+    }
+    // TODO: function, procedure, label
+    ERROR("Bytes of ambiguously sized type...\n");
+  }
 public:
   virtual ~AST() {}
   virtual void printOn(std::ostream &out) const = 0;
@@ -169,6 +192,12 @@ public:
       }
       return PointerType::get(get_llvm_type(t->u.t_pointer.type), 0);
     }
+  }
+  Value* get_llvm_number_of_elements(Types t) {
+    return c32(get_number_of_elements(t));
+  }
+  Value* get_llvm_number_of_bytes(Types t) {
+    return c32(get_number_of_bytes(t));
   }
   virtual void sem() {}
   virtual Value* compile() = 0;
@@ -411,6 +440,12 @@ public:
     TheFPM->run(*main);
     // Print out the IR.
     TheModule->print(outs(), nullptr);
+  }
+  // CreateEntryBlockAlloca - Create an alloca instruction in the entry block of
+  // the function.  This is used for mutable variables etc.
+  static AllocaInst *CreateEntryBlockAlloca(Function *TheFunction, const std::string &VarName, Type *VarType, Value *number_of_elements) {
+    IRBuilder<> TmpB(&TheFunction->getEntryBlock(), TheFunction->getEntryBlock().begin());
+    return TmpB.CreateAlloca(VarType, number_of_elements, VarName.c_str());
   }
 };
 
@@ -833,14 +868,21 @@ public:
     }
   }
   virtual Value* compile() override{
-    if (local_type==1){
+    if (local_type == 1){
       header->sem_outter_scope();
       return header->compile();
     }
     if (local_type_str == "var") {
       for (Id* id : name_list) {
         Types t = id->get_expr_type();
-        AllocaInst *Alloca = Builder.CreateAlloca( get_llvm_type(t), 0, id->get_name());
+        AllocaInst *Alloca;
+        // TODO: label, function, procedure
+        if (t->kind == TYPE_arrayII || t->kind == TYPE_pointer) {
+          Alloca = nullptr;
+        }
+        else {
+          Alloca = Builder.CreateAlloca(get_llvm_type(t), get_llvm_number_of_elements(t), id->get_name());
+        }
         std::string n = id->get_name();
         st.insert(n, t, Alloca);
       }
@@ -1003,7 +1045,7 @@ public:
 
     Types header_type = header->get_header_type();
     if (header_type->kind == TYPE_function) {
-      AllocaInst *Alloca = CreateEntryBlockAlloca(TheFunction, "result", get_llvm_type(header_type->u.t_function.result_type));
+      AllocaInst *Alloca = CreateEntryBlockAlloca(TheFunction, "result", get_llvm_type(header_type->u.t_function.result_type), c32(1));
       st.insert("result", header_type->u.t_function.result_type, Alloca);
     }
 
@@ -1011,7 +1053,7 @@ public:
 
     unsigned int idx = 0;
     for (auto &Arg : TheFunction->args()){
-      AllocaInst *Alloca = CreateEntryBlockAlloca(TheFunction, Arg.getName(), get_llvm_type(arg_types[idx++]));
+      AllocaInst *Alloca = CreateEntryBlockAlloca(TheFunction, Arg.getName(), get_llvm_type(arg_types[idx++]), c32(1));
       Builder.CreateStore(&Arg, Alloca);
       st.insert(Arg.getName(), arg_types[idx++], Alloca);
     }
@@ -1024,7 +1066,7 @@ public:
     else {
       SymbolEntry *e = st.lookup("result");
       Value *RetVal = Builder.CreateLoad(e->value, "result");
-      Builder.CreateRet(RetVal);
+      ReturnInst *tmp = Builder.CreateRet(RetVal);
     }
     verifyFunction(*TheFunction);
     st.closeScope();
@@ -1093,12 +1135,38 @@ public:
     }
   }
   Value* compile() override{
-    Value *r;
-    ERROR("Non implemented");
-    exit(1);
-    return r;
+    Value *lvalue_alloca = lvalue->compile_store();
+    Value *element_idx = expr->compile();
+    Value *lvalue_element_size;  // lvalue's element's number of elements
+    Types lvalue_type = lvalue->get_expr_type();
+    if (lvalue_type->kind == TYPE_arrayI) {
+      lvalue_element_size = get_llvm_number_of_bytes(lvalue_type->u.t_arrayI.type);
+    }
+    else {
+      lvalue_element_size = get_llvm_number_of_bytes(lvalue_type->u.t_arrayII.type);
+    }
+    Value *offset = Builder.CreateMul(lvalue_element_size, element_idx);
+    Value *lvalue_alloca_int = Builder.CreatePtrToInt(lvalue_alloca, i64);
+    Value *alloca_int = Builder.CreateAdd(lvalue_alloca_int, offset);
+    Value *Alloca = Builder.CreateIntToPtr(alloca_int, PointerType::get(i64, 0));
+    return Builder.CreateLoad(Alloca);
   }
   Value* compile_store() override{
+    Value *lvalue_alloca = lvalue->compile_store();
+    Value *element_idx = expr->compile();
+    Value *lvalue_element_size;  // lvalue's element's number of elements
+    Types lvalue_type = lvalue->get_expr_type();
+    if (lvalue_type->kind == TYPE_arrayI) {
+      lvalue_element_size = get_llvm_number_of_bytes(lvalue_type->u.t_arrayI.type);
+    }
+    else {
+      lvalue_element_size = get_llvm_number_of_bytes(lvalue_type->u.t_arrayII.type);
+    }
+    Value *offset = Builder.CreateMul(lvalue_element_size, element_idx);
+    Value *lvalue_alloca_int = Builder.CreatePtrToInt(lvalue_alloca, i64);
+    Value *alloca_int = Builder.CreateAdd(lvalue_alloca_int, offset);
+    Value *Alloca = Builder.CreateIntToPtr(alloca_int, PointerType::get(i64, 0));
+    return Alloca;
   }
 };
 

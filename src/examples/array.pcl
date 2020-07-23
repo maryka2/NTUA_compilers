@@ -1,0 +1,6 @@
+program test;
+var a : array [1] of integer;
+begin
+  a[0] := 14;
+  writeInteger(a[0])
+end.

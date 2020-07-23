@@ -1,9 +1,7 @@
 program test;
-function not_empty():integer;
+  function not_empty() : integer;
+  begin
+  end;
+
 begin
- result:=14;
-end;
-var i : integer;
-begin
- i := not_empty();
 end.
