@@ -141,7 +141,7 @@ protected:
   }
   int get_number_of_bytes(Types t) {
     if ( t->kind == TYPE_integer ) {
-      return 4;
+      return 8;
     }
     if ( t->kind == TYPE_real ) {
       return 4;  // TODO: If double return 8
@@ -880,6 +880,9 @@ public:
         if (t->kind == TYPE_arrayII || t->kind == TYPE_pointer) {
           Alloca = nullptr;
         }
+        else if (t->kind == TYPE_arrayI) {
+          Alloca = Builder.CreateAlloca(get_llvm_type(t->u.t_arrayI.type), get_llvm_number_of_elements(t), id->get_name());
+        }
         else {
           Alloca = Builder.CreateAlloca(get_llvm_type(t), get_llvm_number_of_elements(t), id->get_name());
         }
@@ -1139,16 +1142,18 @@ public:
     Value *element_idx = expr->compile();
     Value *lvalue_element_size;  // lvalue's element's number of elements
     Types lvalue_type = lvalue->get_expr_type();
+    Types lvalue_included_type;
     if (lvalue_type->kind == TYPE_arrayI) {
-      lvalue_element_size = get_llvm_number_of_bytes(lvalue_type->u.t_arrayI.type);
+      lvalue_included_type = lvalue_type->u.t_arrayI.type;
     }
     else {
-      lvalue_element_size = get_llvm_number_of_bytes(lvalue_type->u.t_arrayII.type);
+      lvalue_included_type = lvalue_type->u.t_arrayII.type;
     }
+    lvalue_element_size = get_llvm_number_of_bytes(lvalue_included_type);
     Value *offset = Builder.CreateMul(lvalue_element_size, element_idx);
     Value *lvalue_alloca_int = Builder.CreatePtrToInt(lvalue_alloca, i64);
     Value *alloca_int = Builder.CreateAdd(lvalue_alloca_int, offset);
-    Value *Alloca = Builder.CreateIntToPtr(alloca_int, PointerType::get(i64, 0));
+    Value *Alloca = Builder.CreateIntToPtr(alloca_int, PointerType::get(get_llvm_type(lvalue_included_type), 0));
     return Builder.CreateLoad(Alloca);
   }
   Value* compile_store() override{

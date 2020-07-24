@@ -1,0 +1,5 @@
+program test;
+var a : array [17] of integer;
+begin
+  a[14] := 42
+end.
