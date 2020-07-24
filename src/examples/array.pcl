@@ -1,8 +1,18 @@
 program test;
-var a : array [2] of integer;
+var a : array [2] of array [2] of integer;
+var i,j : integer;
 begin
-  a[0] := 14;
-  a[1] := 15;
-  writeInteger(a[0]);
-  writeInteger(a[1])
+  i := 0;
+  j := 0;
+  while i < 2 do
+  begin
+    while j < 2 do
+    begin
+      a[i][j] := 10*i + j;
+      writeInteger(a[i][j]);
+      j := j + 1;
+   end;
+   j := 0;
+   i := i + 1;
+  end;
 end.

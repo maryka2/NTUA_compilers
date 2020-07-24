@@ -953,7 +953,7 @@ public:
       (new Header("writeReal",  new Formal_vector(new Formal(new Id_vector(id), type_real())) ))->sem_outter_scope(true);
       id = new Id("s");
       id->set_type(type_arrayII(type_char()));
-      (new Header("writeString",  new Formal_vector(new Formal("var", new Id_vector(id), type_arrayII(type_char()))) ))->sem_outter_scope(true);
+      (new Header("writeString",  new Formal_vector(new Formal("var", new Id_vector(id), type_pointer(type_char()))) ))->sem_outter_scope(true);
       (new Header("readInteger",  type_integer() ))->sem_outter_scope(true);
       (new Header("readBoolean",  type_boolean() ))->sem_outter_scope(true);
       (new Header("readChar",  type_char() ))->sem_outter_scope(true);
@@ -1175,7 +1175,12 @@ class Stringconst: public Lvalue {
 private:
   string str;
 public:
-  Stringconst(string s) : str(s) {}
+  Stringconst(string s) {
+    str = "";
+    for (int i = 1; i < s.length() - 1; ++i) {
+      str += s[i];
+    }
+  }
   ~Stringconst(){
     // this is intentionally left empty
   }
@@ -1183,15 +1188,26 @@ public:
     out << "Stringconst " << str;
   }
   void sem() override {
-    type = type_arrayI(str.length() + 1, type_char());
+    // type = type_pointer(str.length() + 1, type_char());
+    type = type_pointer(type_char());
   }
   Value* compile() override{
-    Value *r;
-    ERROR("Non implemented");
-    exit(1);
-    return r;
+    AllocaInst *Alloca = Builder.CreateAlloca(get_llvm_type(type_char()), c64(str.length() + 1));
+    Value *lvalue_alloca_int = Builder.CreatePtrToInt(Alloca, i64); 
+    for (int i = 0; i <= str.length(); i++){
+      Value *alloca_int = Builder.CreateAdd(lvalue_alloca_int, c64(i));
+      Value *char_alloca = Builder.CreateIntToPtr(alloca_int, PointerType::get(i8, 0));
+      if (i == str.length()){
+        Builder.CreateStore(c8('\0'), char_alloca);
+      }
+      else {
+        Builder.CreateStore(c8(str[i]), char_alloca);
+      }
+    }
+    return Alloca;
   }
   Value* compile_store() override{ 
+    // this is intentionally left empty 
   }
 };
 

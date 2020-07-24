@@ -1,0 +1,4 @@
+program t;
+begin
+  writeString("lesnagin")
+end.
