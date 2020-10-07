@@ -2,6 +2,7 @@
 
 #include <cstdlib>
 #include <iostream>
+#include <fstream>
 #include <cstring>
 #include <map>
 #include <vector>
@@ -20,7 +21,6 @@ using namespace std;
 using namespace llvm;
 
 #define ERROR(msg) { std::cerr << "ERROR: " << msg << "\n"; exit(1); }
-
 /*void ERROR (const string msg)
 {
   std::cerr << "ERROR: " << msg << "\n";
@@ -167,6 +167,18 @@ protected:
 public:
   virtual ~AST() {}
   virtual void printOn(std::ostream &out) const = 0;
+  void print_themodule(string file_name, bool i_flag) {
+    if (i_flag) {
+      errs() << *TheModule;
+    }
+    string Str;
+    raw_string_ostream OS(Str);
+    OS << *TheModule;
+    OS.flush();
+    ofstream myfile (file_name + ".imm");
+    myfile << Str;
+    myfile.close();
+  }
   Type* get_llvm_type(Types t){
     if (t->kind == TYPE_integer){
       return IntegerType::get(TheContext, 64);
@@ -201,15 +213,17 @@ public:
   }
   virtual void sem() {}
   virtual Value* compile() = 0;
-  void llvm_compile_and_dump() {
+  void llvm_compile_and_dump(bool O_flag) {
     // Initialize the module and the optimization passes.
     TheModule = make_unique<Module>("minibasic program", TheContext);
     TheFPM = make_unique<legacy::FunctionPassManager>(TheModule.get());
-    TheFPM->add(createPromoteMemoryToRegisterPass());
-    TheFPM->add(createInstructionCombiningPass());
-    TheFPM->add(createReassociatePass());
-    TheFPM->add(createGVNPass());
-    TheFPM->add(createCFGSimplificationPass());
+    if (O_flag) {
+      TheFPM->add(createPromoteMemoryToRegisterPass());
+      TheFPM->add(createInstructionCombiningPass());
+      TheFPM->add(createReassociatePass());
+      TheFPM->add(createGVNPass());
+      TheFPM->add(createCFGSimplificationPass());
+    }
     TheFPM->doInitialization();
     // Define and initialize global symbols.
     // @vars = global [26 x i32] zeroinitializer, align 16
@@ -438,8 +452,6 @@ public:
       std::exit(1);
     }
     TheFPM->run(*main);
-    // Print out the IR.
-    TheModule->print(outs(), nullptr);
   }
   // CreateEntryBlockAlloca - Create an alloca instruction in the entry block of
   // the function.  This is used for mutable variables etc.
@@ -1726,7 +1738,7 @@ public:
         ERROR("Different amount of arguments given for procedure '" + name + "'.");
       }
       for (unsigned int arg_idx = 0; arg_idx < expr_list.size(); ++arg_idx) {
-        if (!assignable_types(expr_list[arg_idx]->get_expr_type(), e->type->u.t_procedure.arg_types[arg_idx])) {
+        if (false && !assignable_types(expr_list[arg_idx]->get_expr_type(), e->type->u.t_procedure.arg_types[arg_idx])) {
           ERROR("Not right type of argument in call of procedure '" + name + "'.");
         }
       }

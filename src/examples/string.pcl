@@ -1,4 +1,9 @@
 program t;
+var a : array [17] of char;
 begin
-  writeString("lesnagin")
+  a[0] := 'h';
+  a[1] := 'i';
+  a[2] := '!';
+  a[3] := '\0';
+  writeString(a)
 end.

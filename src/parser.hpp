@@ -111,7 +111,7 @@ extern int yydebug;
 
 union YYSTYPE
 {
-#line 116 "parser.y" /* yacc.c:1909  */
+#line 124 "parser.y" /* yacc.c:1909  */
 
 	int i;
 	double f;

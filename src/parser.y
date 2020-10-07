@@ -1,8 +1,16 @@
 %{
 #include <cstdio>
 #include <stdlib.h>
+#include <string>
+#include <cstring>
 #include "ast.hpp"
 #include "lexer.hpp"
+
+string file_name = "";
+bool O_flag = false;
+bool f_flag = false;
+bool i_flag = false;
+
 
 LLVMContext AST::TheContext;
 IRBuilder<> AST::Builder(TheContext);
@@ -161,7 +169,7 @@ std::unordered_map<string, SymbolEntry*> globals;  // Global hash table
 
 %%
 
-program				: "program" T_id ";" body "."	{ $4->block_is_program(); /*$4->printOn(std::cout);*/ $4->sem(); $4->llvm_compile_and_dump(); /*$4->printOn(std::cout);*/ $$ = $4; /* st.closeScope();*/ }
+program				: "program" T_id ";" body "."	{ $4->block_is_program(); /*$4->printOn(std::cout);*/ $4->sem(); $4->llvm_compile_and_dump(O_flag); $4->print_themodule(file_name, i_flag);/*$4->printOn(std::cout);*/ $$ = $4; /* st.closeScope();*/ }
 				;
 
 body				: local_list block	{ $1->merge($2); $$ = $1; }
@@ -313,8 +321,67 @@ expr_list			: expr		{ $$ = new Expr_vector($1); }
 
 %%
 
-int main ()
+int main (int argc, char *argv[])
 {
+  if (argc != 2 && argc != 3) {
+    cerr << "./pcl [file_name.pcl] -O -f -i\n";
+    exit(1);
+  }
+
+  int flag_start_idx = 1;
+  if (argv[1][0] != '-') {
+    ++flag_start_idx;
+    string temp = argv[1];
+    for (int i = 0; i<=temp.length()-1; ++i){
+      if (temp[i]=='.'){
+        break;
+      }
+      file_name += temp[i];
+    }
+  }
+
+  for (int i = flag_start_idx; i < argc; ++i) {
+    string cur_flag = argv[i];
+    if (cur_flag == "-O") {
+      O_flag = true;
+    }
+    else if (cur_flag == "-f") {
+      if (file_name != "") {
+        cerr << "./pcl [file_name.pcl] -O -f -i\n";
+        exit(1);
+      }
+      f_flag = true;
+    }
+    else if (cur_flag == "-i") {
+      if (file_name != "") {
+        cerr << "./pcl [file_name.pcl] -O -f -i\n";
+        exit(1);
+      }
+      i_flag = true;
+    }
+    else {
+      cerr << "./pcl [file_name.pcl] -O -f -i\n";
+      exit(1);
+    }
+  }
+
+  if (file_name != "") {
+    freopen(argv[1], "r", stdin);
+  }
+
   int result = yyparse();
+
+  if (file_name != "" || f_flag) {
+    system(("llc-6.0 " + file_name + ".imm -o " + file_name + ".asm").c_str());
+    if (f_flag) {
+      system(("cat " + file_name + ".asm").c_str());
+      system(("rm " + file_name + ".imm").c_str());
+      system(("rm " + file_name + ".asm").c_str());
+    }
+  }
+  else if (i_flag) {
+    system(("rm " + file_name + ".imm").c_str());
+  }
+
   return result;
 }
