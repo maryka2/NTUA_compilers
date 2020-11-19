@@ -1,17 +1,6 @@
-# compilers
+# NTUA__Compilers
+Compilers ( ECE - NTUA)
 
-# :point_right: Παραδοτέα:
-
-1. Λεκτικός Αναλυτής :heavy_check_mark:
-
-2. Συντακτικός Αναλυτής :heavy_check_mark:
-
-3. Πίνακας Συμβόλων :heavy_check_mark:
-
-4. Σημασιολογικός αναλυτής :clock930:
-
-5. Ενδιάμεσος κώδικας :clock630:
-
-6. Βελτιστοποίηση :x:
-
-7. Τελικός κώδικας :x:
+## Authors
+* Georgios Vidalakis  - https://github.com/georgevidalakis
+* Maria Karatzoglidi  - https://github.com/maryka2
